@@ -5,6 +5,8 @@ python -m src.app
 ```
 
 ```
+# ngrok config add-authtoken <token>
+
 ngrok http 3000
 ```
 

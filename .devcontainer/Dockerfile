@@ -26,6 +26,15 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # Setup locale.
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
 
+# Install ngrok.
+RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+    | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
+    && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
+    | tee /etc/apt/sources.list.d/ngrok.list \
+    && apt update && apt install ngrok \
+    && apt-get clean \
+    && rm --recursive --force /var/lib/apt/lists/*
+
 # TODO: Update dependencies.
 # Install python dev dependencies in separate environments via
 # pipx to avoid dependency conflicts.
