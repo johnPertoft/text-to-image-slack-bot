@@ -89,4 +89,5 @@ RUN pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
 
 RUN pip install \
     google-cloud-secret-manager \
+    numpy \
     slack_bolt
