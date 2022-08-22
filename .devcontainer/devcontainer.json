@@ -8,6 +8,9 @@
         "--gpus=all",
         "--ipc=host"
     ],
+	"mounts": [
+        "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind,consistency=cached"
+    ],
 	"postAttachCommand": "direnv allow && pre-commit install",
 	"customizations": {
 		"vscode": {

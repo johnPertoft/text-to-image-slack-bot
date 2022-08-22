@@ -26,6 +26,15 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 # Setup locale.
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
 
+# Install gcloud cli.
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" \
+    | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \
+    && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg \
+    | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
+    && apt-get update -y && apt-get install google-cloud-sdk -y \
+    && apt-get clean \
+    && rm --recursive --force /var/lib/apt/lists/*
+
 # Install ngrok.
 RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
     | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
@@ -79,4 +88,5 @@ ENV PATH=$PATH:/home/$USERNAME/.local/bin
 RUN pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
 
 RUN pip install \
-   slack_bolt
+    google-cloud-secret-manager \
+    slack_bolt
