@@ -1,4 +1,6 @@
 # text-to-image-slack-bot
+Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
+
 
 ```
 python -m src.app
