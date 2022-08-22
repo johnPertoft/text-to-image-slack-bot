@@ -1,21 +1,73 @@
-# See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.245.0/containers/python-3/.devcontainer/base.Dockerfile
+FROM docker.io/nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
 
-# [Choice] Python version (use -bullseye variants on local arm64/Apple Silicon): 3, 3.10, 3.9, 3.8, 3.7, 3.6, 3-bullseye, 3.10-bullseye, 3.9-bullseye, 3.8-bullseye, 3.7-bullseye, 3.6-bullseye, 3-buster, 3.10-buster, 3.9-buster, 3.8-buster, 3.7-buster, 3.6-buster
-ARG VARIANT="3.10-bullseye"
-FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT}
+# TODO: Remove unneeded ones here.
+# System dependencies.
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    build-essential \
+    curl \
+    direnv \
+    git \
+    locales \
+    python3 \
+    python3-dev \
+    python3-pip \
+    python3-venv \
+    python-is-python3 \
+    ripgrep \
+    sudo \
+    tmux \
+    vim \
+    wget \
+    zsh \
+    && apt-get clean \
+    && rm --recursive --force /var/lib/apt/lists/*
 
-# [Choice] Node.js version: none, lts/*, 16, 14, 12, 10
-ARG NODE_VERSION="none"
-RUN if [ "${NODE_VERSION}" != "none" ]; then su vscode -c "umask 0002 && . /usr/local/share/nvm/nvm.sh && nvm install ${NODE_VERSION} 2>&1"; fi
+# TODO: Needed?
+# Setup locale.
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
 
-# [Optional] If your pip requirements rarely change, uncomment this section to add them to the image.
-COPY requirements.txt /tmp/pip-tmp/
-RUN pip3 --disable-pip-version-check --no-cache-dir install -r /tmp/pip-tmp/requirements.txt \
-   && rm -rf /tmp/pip-tmp
+# TODO: Update dependencies.
+# Install python dev dependencies in separate environments via
+# pipx to avoid dependency conflicts.
+ENV PIPX_HOME=/usr/local/py-utils \
+    PIPX_BIN_DIR=/usr/local/py-utils/bin
+ENV PATH=$PATH:$PIPX_BIN_DIR
+RUN pip install pipx && pipx ensurepath
+RUN pipx install black==22.3.0 \
+    && pipx install dvc[gs]==2.10.1 \
+    && pipx install flake8==4.0.1 \
+    && pipx install isort==5.10.1 \
+    && pipx install mypy==0.942 \
+    && pipx install pre-commit==2.18.1 \
+    && pipx install pytest==7.1.1
 
-# [Optional] Uncomment this section to install additional OS packages.
-# RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends <your-package-list-here>
+# Create non-root user.
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN \
+    groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID --create-home --shell /bin/zsh $USERNAME \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
 
-# [Optional] Uncomment this line to install global node packages.
-# RUN su vscode -c "source /usr/local/share/nvm/nvm.sh && npm install -g <your-package-here>" 2>&1
+# Switch to non-root user.
+USER $USERNAME
+
+# Install Oh-my-zsh.
+RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+COPY custom.zsh-theme /home/$USERNAME/.oh-my-zsh/custom/themes/custom.zsh-theme
+RUN sed -i -e 's/ZSH_THEME=.*/ZSH_THEME="custom"/g' ~/.zshrc
+RUN sed -i -e 's/plugins.*/plugins=(git direnv)/g' ~/.zshrc
+
+# Install fzf.
+RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/install --all
+
+# Append .local/bin to path.
+ENV PATH=$PATH:/home/$USERNAME/.local/bin
+
+# Install Pytorch dependencies for correct cuda version.
+RUN pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
+
+RUN pip install \
+   slack_bolt
