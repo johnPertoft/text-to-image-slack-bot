@@ -6,24 +6,27 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 
+import torch
+from diffusers import StableDiffusionPipeline
 from google.cloud import secretmanager
+from PIL import Image
 from slack_bolt import App
 from slack_bolt import BoltRequest
 from slack_bolt import Say
-
-from .model import generate
+from torch import autocast
 
 logging.basicConfig(level=logging.DEBUG)
 
 
-# TODO: AsyncApp instead.
-# TODO: Add requests to a queue and handle in batches and respond later.
-# TODO: Also see https://slack.dev/bolt-python/concepts#lazy-listeners
-# Or not an issue when using say()? Doesn't seem to require an ack within
-# 3 secs.
-# TODO: Use socket mode?
-# TODO: Where to deploy? Cloud run?
-# TODO: Responding multiple times, because of no ack?
+# TODO:
+# - AsyncApp instead?
+# - Add requests to a queue and handle in batches and respond later.
+# - Also see https://slack.dev/bolt-python/concepts#lazy-listeners
+#   Or not an issue when using say()? Doesn't seem to require an ack within
+#   3 secs.
+# - Use socket mode?
+# - Where to deploy? Cloud run? Need gke cluster with gpu nodes?
+# - Responding multiple times, because of no ack? Fixed with middleware?
 
 
 def _get_secret(secret_name: str) -> str:
@@ -31,6 +34,20 @@ def _get_secret(secret_name: str) -> str:
     full_secret_name = f"projects/embark-nlp/secrets/{secret_name}/versions/latest"
     response = client.access_secret_version(name=full_secret_name)
     return response.payload.data.decode("UTF-8")
+
+
+model_id = "CompVis/stable-diffusion-v1-4"
+device = "cuda"
+dtype = torch.float16
+pipe = StableDiffusionPipeline.from_pretrained(model_id, use_auth_token=True, torch_dtype=dtype)
+pipe = pipe.to(device)
+
+
+def _generate(prompt: str) -> Image:
+    with autocast(device):
+        results = pipe([prompt], num_inference_steps=50, eta=0.3, guidance_scale=6)
+        img = results["sample"][0]
+        return img
 
 
 app = App(
@@ -58,7 +75,7 @@ def app_mention(body: Dict[str, Any], say: Say, logger: logging.Logger):
 
     say(f"Hey! I'll generate an image for: {prompt}")
 
-    img = generate(prompt)
+    img = _generate(prompt)
     img_path = tempfile.mktemp(suffix=".jpg")
     img.save(img_path)
 
