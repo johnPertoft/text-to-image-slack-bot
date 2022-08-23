@@ -88,6 +88,8 @@ ENV PATH=$PATH:/home/$USERNAME/.local/bin
 RUN pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
 
 RUN pip install \
+    diffusers \
     google-cloud-secret-manager \
     numpy \
-    slack_bolt
+    slack_bolt \
+    transformers
