@@ -8,6 +8,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     direnv \
     git \
     locales \
+    lsb-release \
     python3 \
     python3-dev \
     python3-pip \
@@ -31,7 +32,8 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
     | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \
     && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg \
     | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
-    && apt-get update -y && apt-get install google-cloud-sdk -y \
+    && apt-get update -y \
+    && DEBIAN_FRONTEND=noninteractive apt-get install google-cloud-sdk -y \
     && apt-get clean \
     && rm --recursive --force /var/lib/apt/lists/*
 
@@ -40,7 +42,19 @@ RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
     | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
     && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
     | tee /etc/apt/sources.list.d/ngrok.list \
-    && apt update && apt install ngrok \
+    && apt update \
+    && apt install ngrok \
+    && apt-get clean \
+    && rm --recursive --force /var/lib/apt/lists/*
+
+# Install docker.
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+    | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+    | tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin \
     && apt-get clean \
     && rm --recursive --force /var/lib/apt/lists/*
 
@@ -66,6 +80,7 @@ ARG USER_GID=$USER_UID
 RUN \
     groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID --create-home --shell /bin/zsh $USERNAME \
+    && usermod -G docker $USERNAME \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
