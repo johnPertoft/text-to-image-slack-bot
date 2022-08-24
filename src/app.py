@@ -53,15 +53,6 @@ def app_mention(body: Dict[str, Any], say: Say, logger: logging.Logger):
             title=prompt,
         )
 
-    # img_path = tempfile.mktemp(suffix=".jpg")
-    # img.save(img_path)
-
-    # app.client.files_upload(
-    #     channels=say.channel,
-    #     file=img_path,
-    #     title=prompt,
-    # )
-
 
 if __name__ == "__main__":
     port = os.environ.get("PORT", 3000)
