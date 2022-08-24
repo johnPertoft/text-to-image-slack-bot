@@ -5,8 +5,10 @@ from PIL import Image
 
 class ImageGenerator:
     def __init__(self):
+        # TODO: Add code to download model if not present I guess.
+        # "CompVis/stable-diffusion-v1-4"
         pipe = StableDiffusionPipeline.from_pretrained(
-            "CompVis/stable-diffusion-v1-4", use_auth_token=True, torch_dtype=torch.float16
+            "pipelines/sd-pipeline", use_auth_token=True, torch_dtype=torch.float16
         )
         pipe = pipe.to("cuda")
         self.pipe = pipe

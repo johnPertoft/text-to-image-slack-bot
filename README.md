@@ -10,7 +10,7 @@ Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
 - Share stuff between devcontainer and app image
 - Include the model files in the image.
 - Restrict valid ip ranges for requests
-- Maybe build via cloud build
+- Maybe build via cloud build?
 
 ## Setup
 <details>
@@ -52,3 +52,9 @@ gcloud secrets add-iam-policy-binding john-test-slack-signing-secret \
    ngrok http 3000
    ```
 3. Update request url for event subscription: https://api.slack.com/apps/A03U9439A5U/event-subscriptions?
+
+## Derp derp
+```bash
+# TODO: missing credentials for this depending on service account?
+gcloud builds submit --tag gcr.io/embark-nlp/john-test
+```
