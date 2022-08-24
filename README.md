@@ -1,5 +1,13 @@
 # text-to-image-slack-bot
 Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
+
+## TODO
+- Put model files in container / gcs
+- Use AsyncApp instead?
+- Use SocketMode?
+- Maybe some kind of setup with sending jobs to a queue and give some feedback immediately?
+- Sometimes getting "ghost" responses, some missing ack or something?
+
 ## Setup
 <details>
 <summary>Click to expand</summary>
