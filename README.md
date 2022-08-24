@@ -7,6 +7,10 @@ Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
 - Use SocketMode?
 - Maybe some kind of setup with sending jobs to a queue and give some feedback immediately?
 - Sometimes getting "ghost" responses, some missing ack or something?
+- Share stuff between devcontainer and app image
+- Include the model files in the image.
+- Restrict valid ip ranges for requests
+- Maybe build via cloud build
 
 ## Setup
 <details>

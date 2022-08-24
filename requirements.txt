@@ -1,0 +1,6 @@
+diffusers
+google-cloud-secret-manager
+numpy
+slack_bolt
+torch
+transformers
