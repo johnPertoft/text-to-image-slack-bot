@@ -10,7 +10,9 @@ Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
 - Share stuff between devcontainer and app image
 - Include the model files in the image.
 - Restrict valid ip ranges for requests
-- Maybe build via cloud build?
+- Maybe build via cloud build? Permissions errors when running from gcp instance.
+- Automatic builds/deploys.
+- Fix temporary names like john-test- prefix
 
 ## Setup
 <details>
