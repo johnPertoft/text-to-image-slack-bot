@@ -1,7 +1,7 @@
+import io
 import logging
 import os
 import re
-import tempfile
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -45,13 +45,14 @@ def app_mention(body: Dict[str, Any], say: Say, logger: logging.Logger):
     say(f"Hey! I'll generate an image for: {prompt}")
     img = image_generator.generate(prompt)
 
-    with tempfile.NamedTemporaryFile(suffix=".jpg") as f:
-        img.save(f)
-        app.client.files_upload(
-            channels=say.channel,
-            file=f.name,
-            title=prompt,
-        )
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    img_bytes = buffer.getvalue()
+    app.client.files_upload(
+        channels=say.channel,
+        title=prompt,
+        content=img_bytes,
+    )
 
 
 if __name__ == "__main__":
