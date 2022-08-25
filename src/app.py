@@ -32,6 +32,24 @@ def skip_retries(request: BoltRequest, next: Callable):
     next()
 
 
+# TODO: There seems to be some ghost requests that eat up some requests.
+# TODO: Should be a counter, and if running on multiple instances, need to sync somehow.
+# from collections import defaultdict
+# num_requests = defaultdict(int)
+
+
+# @app.middleware
+# def rate_limit(request: BoltRequest, next: Callable):
+#     # TODO: Can we respond something in here too? To let the user know.
+#     user_id = request.body["event"]["user"]
+
+#     if num_requests[user_id] > 3:
+#         print("========== SKIPPED!")
+#         return
+#     num_requests[user_id] += 1
+#     next()
+
+
 @app.event("app_mention", middleware=[skip_retries])
 def app_mention(body: Dict[str, Any], say: Say, logger: logging.Logger):
     logger.info(body)

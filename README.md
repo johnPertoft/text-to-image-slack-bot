@@ -13,6 +13,8 @@ Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
 - Maybe build via cloud build? Permissions errors when running from gcp instance.
 - Automatic builds/deploys.
 - Fix temporary names like john-test- prefix
+- Save all generated images in some bucket/bigquery?
+- Rate limit by user id?
 
 ## Setup
 <details>

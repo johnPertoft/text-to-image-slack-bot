@@ -8,7 +8,8 @@ class ImageGenerator:
         # TODO: Add code to download model if not present I guess.
         # "CompVis/stable-diffusion-v1-4"
         pipe = StableDiffusionPipeline.from_pretrained(
-            "pipelines/sd-pipeline", use_auth_token=True, torch_dtype=torch.float16
+            "pipelines/sd-pipeline",
+            use_auth_token=True,
         )
         pipe = pipe.to("cuda")
         self.pipe = pipe
