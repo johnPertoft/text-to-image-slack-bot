@@ -1,5 +1,5 @@
-import io
 import logging
+import multiprocessing as mp
 import os
 import re
 from typing import Any
@@ -10,19 +10,23 @@ from slack_bolt import App
 from slack_bolt import BoltRequest
 from slack_bolt import Say
 
-from .generate import ImageGenerator
+from .inference import InferenceProcess
+from .inference import Task
 from .utils import get_secret
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
-
-logging.info("Loading model")
-image_generator = ImageGenerator()
-
+# Create the Slack app.
 app = App(
     token=get_secret("john-test-slack-bot-token"),
     signing_secret=get_secret("john-test-slack-signing-secret"),
 )
+
+# TODO: I don't think this will work if running with gunicorn or some other web server.
+# Create and start the inference process.
+task_queue: mp.Queue = mp.Queue()
+inference_process = InferenceProcess(task_queue, app.client)
+inference_process.start()
 
 
 @app.middleware
@@ -32,27 +36,8 @@ def skip_retries(request: BoltRequest, next: Callable):
     next()
 
 
-# TODO: There seems to be some ghost requests that eat up some requests.
-# TODO: Should be a counter, and if running on multiple instances, need to sync somehow.
-# from collections import defaultdict
-# num_requests = defaultdict(int)
-
-
-# @app.middleware
-# def rate_limit(request: BoltRequest, next: Callable):
-#     # TODO: Can we respond something in here too? To let the user know.
-#     user_id = request.body["event"]["user"]
-
-#     if num_requests[user_id] > 3:
-#         print("========== SKIPPED!")
-#         return
-#     num_requests[user_id] += 1
-#     next()
-
-
 @app.event("app_mention", middleware=[skip_retries])
 def app_mention(body: Dict[str, Any], say: Say, logger: logging.Logger):
-    logger.info(body)
     raw_event_text = body["event"]["text"]
     event_text_match = re.search(r"(<@.*>) (.*)", raw_event_text)
     if event_text_match is not None:
@@ -61,16 +46,7 @@ def app_mention(body: Dict[str, Any], say: Say, logger: logging.Logger):
         prompt = "default prompt"
 
     say(f"Hey! I'll generate an image for: {prompt}")
-    img = image_generator.generate(prompt)
-
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    img_bytes = buffer.getvalue()
-    app.client.files_upload(
-        channels=say.channel,
-        title=prompt,
-        content=img_bytes,
-    )
+    task_queue.put(Task(prompt=prompt, channel=say.channel))
 
 
 if __name__ == "__main__":
