@@ -2,19 +2,17 @@
 Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
 
 ## TODO
-- Put model files in container / gcs
-- Use AsyncApp instead?
-- Use SocketMode?
-- Maybe some kind of setup with sending jobs to a queue and give some feedback immediately?
-- Sometimes getting "ghost" responses, some missing ack or something?
-- Share stuff between devcontainer and app image
-- Include the model files in the image.
-- Restrict valid ip ranges for requests
-- Maybe build via cloud build? Permissions errors when running from gcp instance.
-- Automatic builds/deploys.
-- Fix temporary names like john-test- prefix
-- Save all generated images in some bucket/bigquery?
-- Rate limit by user id?
+- [ ] Figure out why regular python/ubuntu image is not working on ml cluster with gpus.
+- [ ] Have a single Dockerfile, with multiple build targets for dev container and prod.
+- [ ] Automatic build/deploys via CI.
+- [ ] Add option to pass in arguments to model inference.
+- [ ] Restrict ip ranges for requests?
+- [ ] Use slack SocketMode instead?
+- [ ] Fix temporary names like john-text- prefixes
+- [ ] Save all generated images in some bucket/bigquery?
+- [ ] Maybe build via cloud build?
+- [ ] Add support for image as input?
+- [ ] Add support for image inpainting?
 
 ## Setup
 <details>
