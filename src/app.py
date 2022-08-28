@@ -36,6 +36,7 @@ inference_process.start()
 inference_argparser = argparse.ArgumentParser()
 inference_argparser.add_argument("--num_inference_steps", type=int)
 inference_argparser.add_argument("--guidance_scale", type=float)
+inference_argparser.add_argument("--format", type=str)
 inference_argparser.add_argument("--seed", type=int)
 inference_argparser.add_argument("prompt_words", nargs="+")
 

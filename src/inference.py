@@ -1,6 +1,7 @@
 import io
 import logging
 import multiprocessing as mp
+from typing import Literal
 from typing import Optional
 
 import slack_sdk
@@ -18,6 +19,7 @@ class InferenceInputs(BaseModel):
     seed: Optional[int]
     num_inference_steps: int = Field(default=50, ge=1, le=100)
     guidance_scale: float = Field(default=7.5, ge=1.0, le=15.0)
+    format: Literal["square", "tall", "wide"] = "square"
 
 
 class InferenceTask(BaseModel):
@@ -43,15 +45,28 @@ class InferenceProcess(mp.Process):
         else:
             random_generator = None
 
+        if inputs.format == "square":
+            height = 512
+            width = 512
+        elif inputs.format == "wide":
+            height = 512
+            width = 768
+        else:
+            height = 768
+            width = 512
+
         with torch.autocast(pipe.device.type):
             results = pipe(
                 prompt=[inputs.prompt],
                 num_inference_steps=inputs.num_inference_steps,
                 guidance_scale=inputs.guidance_scale,
+                height=height,
+                width=width,
                 generator=random_generator,
             )
-            img = results["sample"][0]
-            return img
+
+        img = results["sample"][0]
+        return img
 
     def run(self):
         # Need to make sure to load the model in this forked process rather than
