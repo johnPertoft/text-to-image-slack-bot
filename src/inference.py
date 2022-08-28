@@ -58,6 +58,7 @@ class InferenceProcess(mp.Process):
         # in the main process because otherwise CUDA complains.
         pipe = self.load_model()
 
+        logging.info("Inference ready to handle requests")
         while True:
             task = self.task_queue.get()
             logging.info(f"Handling request: {task}")
@@ -67,6 +68,6 @@ class InferenceProcess(mp.Process):
             img_bytes = buffer.getvalue()
             self.slack_client.files_upload(
                 channels=task.channel,
-                title=task.prompt,
+                title=task.inputs.prompt,
                 content=img_bytes,
             )
