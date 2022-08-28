@@ -106,5 +106,6 @@ RUN pip install \
     diffusers \
     google-cloud-secret-manager \
     numpy \
+    pydantic \
     slack_bolt \
     transformers
