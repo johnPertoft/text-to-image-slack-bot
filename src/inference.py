@@ -1,19 +1,28 @@
 import io
 import logging
 import multiprocessing as mp
+from typing import Optional
 
 import slack_sdk
 import torch
 from diffusers import StableDiffusionPipeline
 from PIL import Image
+from pydantic import BaseModel
+from pydantic import Field
 
 logging.basicConfig(level=logging.INFO)
 
 
-class Task:
-    def __init__(self, prompt: str, channel: str):
-        self.prompt = prompt
-        self.channel = channel
+class InferenceInputs(BaseModel):
+    prompt: str
+    seed: Optional[int]
+    num_inference_steps: int = Field(default=50, ge=1, le=100)
+    guidance_scale: float = Field(default=7.5, ge=1.0, le=15.0)
+
+
+class InferenceTask(BaseModel):
+    inputs: InferenceInputs
+    channel: str
 
 
 class InferenceProcess(mp.Process):
@@ -23,18 +32,24 @@ class InferenceProcess(mp.Process):
         self.slack_client = slack_client
 
     def load_model(self):
-        # model_id = "CompVis/stable-diffusion-v1-4"
         model_id = "pipelines/sd-pipeline"
-        pipe = StableDiffusionPipeline.from_pretrained(
-            model_id,
-            use_auth_token=True,
-        )
+        pipe = StableDiffusionPipeline.from_pretrained(model_id)
         pipe = pipe.to("cuda")
         return pipe
 
-    def generate(self, pipe, prompt: str) -> Image:
+    def generate(self, pipe: StableDiffusionPipeline, inputs: InferenceInputs) -> Image:
+        if inputs.seed is not None:
+            random_generator = torch.Generator(pipe.device.type).manual_seed(inputs.seed)
+        else:
+            random_generator = None
+
         with torch.autocast(pipe.device.type):
-            results = pipe([prompt], num_inference_steps=50, eta=0.3, guidance_scale=6)
+            results = pipe(
+                prompt=[inputs.prompt],
+                num_inference_steps=inputs.num_inference_steps,
+                guidance_scale=inputs.guidance_scale,
+                generator=random_generator,
+            )
             img = results["sample"][0]
             return img
 
@@ -45,8 +60,8 @@ class InferenceProcess(mp.Process):
 
         while True:
             task = self.task_queue.get()
-            logging.info(f"Handling request: {task.prompt}")
-            img = self.generate(pipe, task.prompt)
+            logging.info(f"Handling request: {task}")
+            img = self.generate(pipe, task.inputs)
             buffer = io.BytesIO()
             img.save(buffer, format="PNG")
             img_bytes = buffer.getvalue()
