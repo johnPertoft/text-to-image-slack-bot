@@ -1,6 +1,8 @@
 # text-to-image-slack-bot
 Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
 
+https://stable-diffusion.ml.embark.net/slack/events
+
 ## TODO
 - [ ] Figure out why regular python/ubuntu image is not working on ml cluster with gpus.
 - [ ] Have a single Dockerfile, with multiple build targets for dev container and prod.

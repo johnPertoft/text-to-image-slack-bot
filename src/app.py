@@ -1,4 +1,5 @@
 import argparse
+import configparser
 import logging
 import multiprocessing as mp
 import os
@@ -40,8 +41,15 @@ inference_argparser.add_argument("--format", type=str)
 inference_argparser.add_argument("--seed", type=int)
 inference_argparser.add_argument("prompt_words", nargs="+")
 
+# TODO: Maybe use some format like this instead? comma separated toml?
+# @burgerman format: wide, num_inference_steps: 100 | Baby Yoda learning to ride a bike
+# @burgerman format = wide, num_inference_steps = 100 | Baby Yoda learning to ride a bike
 
-def parse_inference_inputs(query_msg: str) -> Optional[InferenceInputs]:
+# use implicits if not passing, i.e. same functionality as before
+# @burgerman Baby Yoda learning to ride a bike
+
+
+def parse_inputs(query_msg: str) -> Optional[InferenceInputs]:
     try:
         args = inference_argparser.parse_args(shlex.split(query_msg))
     except SystemExit:
@@ -55,6 +63,33 @@ def parse_inference_inputs(query_msg: str) -> Optional[InferenceInputs]:
         return InferenceInputs(**args_d)
     except ValidationError:
         return None
+
+
+def parse_inputs2(query_msg: str) -> Optional[InferenceInputs]:
+    # Expected query msg format:
+    # guidance_scale = 8.5, format = wide | An old red car, 1950s
+
+    # TODO: Not getting any type converters with this approach though.
+
+    parts = query_msg.split("|")
+    if len(parts) == 1:
+        prompt_str = parts[0]
+        return InferenceInputs(prompt=prompt_str)
+    else:
+        config_str = parts[0]
+        prompt_str = "|".join(parts[1:])
+
+        config_str = config_str.replace(" ", "")
+        config_str = config_str.replace(",", "\n")
+        config_str = f"[config]\n{config_str}"
+        config = configparser.ConfigParser()
+        try:
+            config.read_string(config_str)
+            # TODO: Create the InferenceInputs here
+            return None
+
+        except configparser.ParsingError:
+            return None
 
 
 @app.middleware
@@ -74,7 +109,7 @@ def app_mention(body: Dict[str, Any], say: Say):
         return
 
     query_msg = raw_event_query_match.group(2)
-    inference_inputs = parse_inference_inputs(query_msg)
+    inference_inputs = parse_inputs(query_msg)
 
     if inference_inputs is None:
         # TODO: Better help message.
