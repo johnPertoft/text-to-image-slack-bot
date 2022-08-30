@@ -9,6 +9,7 @@ set -o pipefail
 # - Automatically download the pipeline files?
 
 if [ -d "pipelines/sd-pipeline" ]; then
+    gcloud auth configure-docker
     docker build -t gcr.io/embark-shared/ml2/john-stable-diffusion .
     docker push gcr.io/embark-shared/ml2/john-stable-diffusion
 else
