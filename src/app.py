@@ -67,7 +67,7 @@ def parse_query(query_msg: str) -> Tuple[str, Optional[Dict[str, Any]]]:
 def prepare_inputs(prompt: str, config: Optional[Dict[str, Any]]) -> InferenceInputs:
     config = config or dict()
     if "img_uri" in config:
-        img = download_img(config["img_uri"])
+        img = download_img(config["img_uri"], slack_token=get_secret("john-test-slack-bot-token"))
         config["init_img"] = img
         del config["img_uri"]
     return InferenceInputs(prompt=prompt, **config)
