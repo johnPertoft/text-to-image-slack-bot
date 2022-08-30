@@ -27,10 +27,14 @@ class InferenceInputs(BaseModel):
     guidance_scale: float = Field(default=7.5, ge=1.0, le=15.0)
     format: Literal["square", "tall", "wide"] = "square"
 
+    class Config:
+        arbitrary_types_allowed = True
+
 
 class InferenceTask(BaseModel):
     inputs: InferenceInputs
     channel: str
+    title: str
 
 
 class InferenceProcess(mp.Process):
@@ -77,7 +81,7 @@ class InferenceProcess(mp.Process):
 
             results = pipe.from_text_and_image(
                 prompt=inputs.prompt,
-                init_img=init_img,
+                init_image=init_img,
                 num_inference_steps=inputs.num_inference_steps,
                 guidance_scale=inputs.guidance_scale,
                 strength=1.0,
@@ -93,10 +97,6 @@ class InferenceProcess(mp.Process):
         # in the main process because otherwise CUDA complains.
         pipe = self.load_model()
 
-        # TODO: Include inputs params in title.
-        # TODO: But need to exclude the init_img if present I guess.
-        # TODO: Define __repr__ or whatever it's called on the data class.
-
         logging.info("Inference ready to handle requests")
         while True:
             task = self.task_queue.get()
@@ -107,6 +107,6 @@ class InferenceProcess(mp.Process):
             img_bytes = buffer.getvalue()
             self.slack_client.files_upload(
                 channels=task.channel,
-                title=task.inputs.prompt,
+                title=task.title,
                 content=img_bytes,
             )
