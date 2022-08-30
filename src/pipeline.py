@@ -19,6 +19,9 @@ from .contrib import StableDiffusionImg2ImgPipeline  # type: ignore
 
 
 def preprocess_img(image: Image.Image) -> torch.FloatTensor:
+    # TODO: The collab was running with a t4 too, why wasn't it running
+    # out of mem with 512x1024 img?
+
     # TODO: Keep aspect ratio and do cropping maybe.
     # TODO: Don't hardcode it here.
     image = image.resize((768, 512))
