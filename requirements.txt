@@ -1,4 +1,5 @@
 diffusers
+ftfy
 google-cloud-secret-manager
 numpy
 pydantic
