@@ -25,6 +25,7 @@ class InferenceInputs(BaseModel):
     init_img: Optional[Image.Image]
     num_inference_steps: int = Field(default=50, ge=1, le=100)
     guidance_scale: float = Field(default=7.5, ge=1.0, le=15.0)
+    strength: float = Field(default=0.8, ge=0.0, le=1.0)
     format: Literal["square", "tall", "wide"] = "square"
 
     class Config:
@@ -75,16 +76,12 @@ class InferenceProcess(mp.Process):
             )
         else:
             init_img = preprocess_img(inputs.init_img)
-
-            # TODO: strength param should be in pydantic model too?
-            # TODO: Is strength only reducing the number of steps?:/
-
             results = pipe.from_text_and_image(
                 prompt=inputs.prompt,
                 init_image=init_img,
                 num_inference_steps=inputs.num_inference_steps,
                 guidance_scale=inputs.guidance_scale,
-                strength=1.0,
+                strength=inputs.strength,
                 generator=random_generator,
             )
 
