@@ -28,3 +28,15 @@ response = requests.get(url)
 init_image = Image.open(io.BytesIO(response.content)).convert("RGB")
 init_image = init_image.resize((768, 512))
 init_image = preprocess(init_image)
+
+
+class BurgermanPipeline:
+    def __init__(self):
+        # TODO: Load all the parts and schedulers etc.
+        # TODO: Then load the regular pipelines by passing them in
+        # TODO: Would this make it fit in memory?
+        pass
+
+    def __call__(self):
+        # TODO: Copy arguments from regular pipelines, or just pass along kwargs.
+        pass
