@@ -22,14 +22,16 @@ def preprocess_img(image: Image.Image) -> torch.FloatTensor:
     # TODO: The collab was running with a t4 too, why wasn't it running
     # out of mem with 512x1024 img?
 
-    # TODO: Keep aspect ratio and do cropping maybe.
-    # TODO: Don't hardcode it here.
-    image = image.resize((768, 512))
-
-    # TODO: Need to ensure that size fits.
+    # TODO: Do resizing + cropping properly instead.
+    # TODO: Needs to be a multiple of 32.
     w, h = image.size
-    w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
-    image = image.resize((w, h), resample=Image.LANCZOS)
+    if w / h >= 1.5:
+        image = image.resize((768, 512), resample=Image.LANCZOS)
+    elif h >= 1.5:
+        image = image.resize((512, 768), resample=Image.LANCZOS)
+    else:
+        image = image.resize((512, 512), resample=Image.LANCZOS)
+
     image = np.array(image).astype(np.float32) / 255.0
     image = image[None].transpose(0, 3, 1, 2)
     image = torch.from_numpy(image)
