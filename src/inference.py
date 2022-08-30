@@ -65,6 +65,7 @@ class InferenceProcess(mp.Process):
                 generator=random_generator,
             )
 
+        # TODO: Pass along some info about nsfw detected here instead.
         img = results["sample"][0]
         return img
 
@@ -83,6 +84,6 @@ class InferenceProcess(mp.Process):
             img_bytes = buffer.getvalue()
             self.slack_client.files_upload(
                 channels=task.channel,
-                title=task.inputs.prompt,
+                title=str(task.inputs),
                 content=img_bytes,
             )

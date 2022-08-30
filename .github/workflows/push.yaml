@@ -1,0 +1,12 @@
+on:
+  pull_request:
+  push:
+    branches: main
+
+# TODO: Make sure this depends on linting/test stages.
+jobs:
+  push-image:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: echo "TODO push image"
