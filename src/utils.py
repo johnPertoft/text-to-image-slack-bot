@@ -1,3 +1,4 @@
+import functools
 import io
 import logging
 from typing import Optional
@@ -16,6 +17,7 @@ def get_secret(secret_name: str) -> str:
     return response.payload.data.decode("UTF-8")
 
 
+@functools.lru_cache(maxsize=512)
 def download_img(url: str) -> Optional[Image.Image]:
     # TODO:
     # - Should update to async server since we'll spend time downloading potentially.
@@ -24,6 +26,9 @@ def download_img(url: str) -> Optional[Image.Image]:
     # - General fault tolerance needed here.
     # - Catch only the expected errors here.
     # - Should maybe have some caching of image. I imagine that people might rerun with same url.
+    # - Probably need to add some token to be able to download from slack.
+    #   headers = {'Authorization': 'Bearer ' + TOKEN}
+    #   requests.get(url, timeout=5.0, headers=headers)  Only for slack url though?
     try:
         response = requests.get(url, timeout=5.0)
         img_bytes = io.BytesIO(response.content)
