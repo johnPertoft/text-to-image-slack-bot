@@ -76,6 +76,7 @@ def prepare_inputs(prompt: str, config: Optional[Dict[str, Any]]) -> InferenceIn
         # Slack adds some formatting to urls so we need to remove it.
         img_uri = config["img_uri"]
         img_uri = img_uri[1:-1]
+        logging.info(f"Downloading {img_uri}")
         img = download_img(img_uri, slack_token=get_secret("john-test-slack-bot-token"))
         config["init_img"] = img
         del config["img_uri"]
@@ -98,7 +99,7 @@ def app_mention(body: Dict[str, Any], say: Say):
 
     # Get the query from the @mention message.
     raw_event_text = body["event"]["text"]
-    raw_event_query_match = re.search(r"(<@.*>) (.*)", raw_event_text)
+    raw_event_query_match = re.search(r"(<@.*?>) (.*)", raw_event_text)
     if raw_event_query_match is None:
         say_error("Oops! You have to write a text prompt too!")
         return
