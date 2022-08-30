@@ -65,21 +65,25 @@ def skip_retries(request: BoltRequest, next: Callable):
 
 @app.event("app_mention", middleware=[skip_retries])
 def app_mention(body: Dict[str, Any], say: Say):
+    # TODO: Mentions can look different than this
+    # e.g. "You can count on <@U0LAN0Z89> for an honorable mention."
+    # Maybe this regex makes sense in this case though?
     raw_event_text = body["event"]["text"]
     raw_event_query_match = re.search(r"(<@.*>) (.*)", raw_event_text)
 
+    # TODO: Improve help strings in case anything went wrong.
+
+    thread_ts = body["event"]["ts"]
+
     if raw_event_query_match is None:
-        # TODO: Write this as a thread response instead + help string.
-        say("Hey! You have to write a text prompt too!")
+        say("Hey! You have to write a text prompt too!", thread_ts=thread_ts)
         return
 
     query_msg = raw_event_query_match.group(2)
     inference_inputs = parse_inputs(query_msg)
 
     if inference_inputs is None:
-        # TODO: Write this as a thread response instead + help string.
-        # TODO: Show if it was validation error?
-        say("Hey! I couldn't parse that request properly!")
+        say("Hey! I couldn't parse that request properly!", thread_ts=thread_ts)
         return
 
     say(f"Hey! I'll generate an image for {inference_inputs.prompt}")
