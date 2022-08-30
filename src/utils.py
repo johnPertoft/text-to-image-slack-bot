@@ -2,6 +2,7 @@ import functools
 import io
 import logging
 from typing import Optional
+from urllib.parse import urlparse
 
 import requests  # type: ignore
 from google.cloud import secretmanager
@@ -20,19 +21,14 @@ def get_secret(secret_name: str) -> str:
 
 
 @functools.lru_cache(maxsize=512)
-def download_img(url: str) -> Optional[Image.Image]:
-    # TODO:
-    # - Should update to async server since we'll spend time downloading potentially.
-    # - Stop if too big file or something?
-    # - Stop if it's not an image
-    # - General fault tolerance needed here.
-    # - Catch only the expected errors here.
-    # - Should maybe have some caching of image. I imagine that people might rerun with same url.
-    # - Probably need to add some token to be able to download from slack.
-    #   headers = {'Authorization': 'Bearer ' + TOKEN}
-    #   requests.get(url, timeout=5.0, headers=headers)  Only for slack url though?
+def download_img(url: str, slack_token: Optional[str]) -> Optional[Image.Image]:
+    p = urlparse(url)
+    if p.netloc == "files.slack.com" and slack_token is not None:
+        headers = {"Authorization": "Bearer " + slack_token}
+    else:
+        headers = None
     try:
-        response = requests.get(url, timeout=5.0)
+        response = requests.get(url, timeout=5.0, headers=headers)
         img_bytes = io.BytesIO(response.content)
         img = Image.open(img_bytes).convert("RGB")
         return img
