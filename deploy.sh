@@ -13,8 +13,6 @@ if [[ $(git symbolic-ref --short -q HEAD) != "main" ]]; then
     exit 1
 fi
 
-exit
-
 if [ -d "pipelines/sd-pipeline" ]; then
     gcloud auth configure-docker
     docker build -t gcr.io/embark-shared/ml2/john-stable-diffusion .
