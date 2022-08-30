@@ -6,17 +6,23 @@ from typing import Optional
 
 import slack_sdk
 import torch
-from diffusers import StableDiffusionPipeline
 from PIL import Image
 from pydantic import BaseModel
 from pydantic import Field
 
+from .pipeline import BurgermanPipeline
+from .pipeline import preprocess_img
+
 logging.basicConfig(level=logging.INFO)
+
+# TODO:
+# - Fix missing type hints in this file.
 
 
 class InferenceInputs(BaseModel):
     prompt: str
     seed: Optional[int]
+    init_img: Optional[Image.Image]
     num_inference_steps: int = Field(default=50, ge=1, le=100)
     guidance_scale: float = Field(default=7.5, ge=1.0, le=15.0)
     format: Literal["square", "tall", "wide"] = "square"
@@ -33,35 +39,48 @@ class InferenceProcess(mp.Process):
         self.task_queue = task_queue
         self.slack_client = slack_client
 
-    def load_model(self):
-        model_id = "pipelines/sd-pipeline"
-        pipe = StableDiffusionPipeline.from_pretrained(model_id)
-        pipe = pipe.to("cuda")
+    def load_model(self) -> BurgermanPipeline:
+        pipe = BurgermanPipeline("pipelines/sd-pipeline")
+        pipe.to("cuda")
         return pipe
 
-    def generate(self, pipe: StableDiffusionPipeline, inputs: InferenceInputs) -> Image:
+    def generate(self, pipe: BurgermanPipeline, inputs: InferenceInputs) -> Image.Image:
         if inputs.seed is not None:
             random_generator = torch.Generator(pipe.device.type).manual_seed(inputs.seed)
         else:
             random_generator = None
 
-        if inputs.format == "square":
-            height = 512
-            width = 512
-        elif inputs.format == "wide":
-            height = 512
-            width = 768
-        else:
-            height = 768
-            width = 512
+        if inputs.init_img is None:
+            if inputs.format == "square":
+                height = 512
+                width = 512
+            elif inputs.format == "wide":
+                height = 512
+                width = 768
+            else:
+                height = 768
+                width = 512
 
-        with torch.autocast(pipe.device.type):
-            results = pipe(
-                prompt=[inputs.prompt],
+            results = pipe.from_text(
+                prompt=inputs.prompt,
                 num_inference_steps=inputs.num_inference_steps,
                 guidance_scale=inputs.guidance_scale,
                 height=height,
                 width=width,
+                generator=random_generator,
+            )
+        else:
+            init_img = preprocess_img(inputs.init_img)
+
+            # TODO: strength param should be in pydantic model too?
+            # TODO: Is strength only reducing the number of steps?:/
+
+            results = pipe.from_text_and_image(
+                prompt=inputs.prompt,
+                init_img=init_img,
+                num_inference_steps=inputs.num_inference_steps,
+                guidance_scale=inputs.guidance_scale,
+                strength=1.0,
                 generator=random_generator,
             )
 
@@ -74,6 +93,10 @@ class InferenceProcess(mp.Process):
         # in the main process because otherwise CUDA complains.
         pipe = self.load_model()
 
+        # TODO: Include inputs params in title.
+        # TODO: But need to exclude the init_img if present I guess.
+        # TODO: Define __repr__ or whatever it's called on the data class.
+
         logging.info("Inference ready to handle requests")
         while True:
             task = self.task_queue.get()
@@ -84,6 +107,6 @@ class InferenceProcess(mp.Process):
             img_bytes = buffer.getvalue()
             self.slack_client.files_upload(
                 channels=task.channel,
-                title=str(task.inputs),
+                title=task.inputs.prompt,
                 content=img_bytes,
             )

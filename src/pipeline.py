@@ -1,16 +1,9 @@
-# TODO: Custom pipeline that can take just text or text+image.
-# TODO: Probably can't fit two different pipelines so better to have one handling both.
-# TODO: ...or maybe load the parts (vae, unet, etc) and then create two pipelines from them,
-# easier to maintain?
-
-import io
 from pathlib import Path
 from typing import List
 from typing import Optional
 from typing import Union
 
 import numpy as np
-import requests  # type: ignore
 import torch
 from diffusers import AutoencoderKL
 from diffusers import PNDMScheduler
@@ -25,7 +18,12 @@ from transformers import CLIPTokenizer
 from .contrib import StableDiffusionImg2ImgPipeline  # type: ignore
 
 
-def preprocess(image):
+def preprocess_img(image: Image.Image) -> torch.FloatTensor:
+    # TODO: Keep aspect ratio and do cropping maybe.
+    # TODO: Don't hardcode it here.
+    image = image.resize((768, 512))
+
+    # TODO: Need to ensure that size fits.
     w, h = image.size
     w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
     image = image.resize((w, h), resample=Image.LANCZOS)
@@ -35,18 +33,8 @@ def preprocess(image):
     return 2.0 * image - 1.0
 
 
-# TODO: Put download function in utils.
-# TODO: Use this to load image url somewhere
-# TODO: Maybe worth it to convert to async app since we will spend time on downloading now too.
-url = "https://raw.githubusercontent.com/CompVis/stable-diffusion/main/assets/stable-samples/img2img/sketch-mountains-input.jpg"  # noqa: E501
-response = requests.get(url)
-init_image = Image.open(io.BytesIO(response.content)).convert("RGB")
-init_image = init_image.resize((768, 512))
-init_image = preprocess(init_image)
-
-
 class BurgermanPipeline:
-    def __init__(self):
+    def __init__(self, pipeline_path: str):
         # TODO: Correct models being used? Blog post specified "openai/clip-vit-large-patch14"
         # for text encoder.
 
@@ -61,7 +49,7 @@ class BurgermanPipeline:
         # TODO: The two different pipeline have some different expectations on schedulers.
         # Read up on this.
 
-        pipeline_dir = Path("pipelines/sd-pipeline")
+        pipeline_dir = Path(pipeline_path)
         tokenizer = CLIPTokenizer.from_pretrained(pipeline_dir / "tokenizer")
         text_encoder = CLIPTextModel.from_pretrained(pipeline_dir / "text_encoder")
         vae = AutoencoderKL.from_pretrained(pipeline_dir / "vae")
@@ -99,6 +87,10 @@ class BurgermanPipeline:
         self.text2img = self.text2img.to(device)
         self.img2img = self.img2img.to(device)
 
+    @property
+    def device(self):
+        return self.text2img.device
+
     @torch.no_grad()
     def from_text(
         self,
@@ -112,18 +104,18 @@ class BurgermanPipeline:
         output_type: Optional[str] = "pil",
         **kwargs,
     ):
-        # TODO: Or just define it with *args, **kwargs?
-        return self.text2img(
-            prompt,
-            height,
-            width,
-            num_inference_steps,
-            guidance_scale,
-            eta,
-            generator,
-            output_type,
-            **kwargs,
-        )
+        with torch.autocast(self.text2img.device.type):
+            return self.text2img(
+                prompt,
+                height,
+                width,
+                num_inference_steps,
+                guidance_scale,
+                eta,
+                generator,
+                output_type,
+                **kwargs,
+            )
 
     @torch.no_grad()
     def from_text_and_image(
@@ -137,21 +129,14 @@ class BurgermanPipeline:
         generator: Optional[torch.Generator] = None,
         output_type: Optional[str] = "pil",
     ):
-        # TODO: Or just define it with *args, **kwargs?
-        return self.img2img(
-            prompt,
-            init_image,
-            strength,
-            num_inference_steps,
-            guidance_scale,
-            eta,
-            generator,
-            output_type,
-        )
-
-
-if __name__ == "__main__":
-    pipe = BurgermanPipeline()
-    import pdb
-
-    pdb.set_trace()
+        with torch.autocast(self.img2img.device.type):
+            return self.img2img(
+                prompt,
+                init_image,
+                strength,
+                num_inference_steps,
+                guidance_scale,
+                eta,
+                generator,
+                output_type,
+            )
