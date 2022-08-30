@@ -22,6 +22,8 @@ def download_img(url: str) -> Optional[Image.Image]:
     # - Stop if too big file or something?
     # - Stop if it's not an image
     # - General fault tolerance needed here.
+    # - Catch only the expected errors here.
+    # - Should maybe have some caching of image. I imagine that people might rerun with same url.
     try:
         response = requests.get(url, timeout=5.0)
         img_bytes = io.BytesIO(response.content)
