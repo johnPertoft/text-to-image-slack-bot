@@ -50,10 +50,13 @@ def parse_query(query_msg: str) -> Tuple[str, Optional[Dict[str, Any]]]:
     parts = query_msg.split("|")
     if len(parts) == 1:
         prompt_str = parts[0]
+        prompt_str = prompt_str.strip()
+
         return prompt_str, None
     else:
         config_str = parts[0]
         prompt_str = "|".join(parts[1:])  # If "|" present in prompt part, join it back.
+        prompt_str = prompt_str.strip()
 
         config_str = config_str.replace(" ", "")
         config_str = config_str.replace(",", "\n")
@@ -61,13 +64,19 @@ def parse_query(query_msg: str) -> Tuple[str, Optional[Dict[str, Any]]]:
         config = configparser.ConfigParser()
         config.read_string(config_str)
         config_d = dict(config["config"])
+
         return prompt_str, config_d
 
 
 def prepare_inputs(prompt: str, config: Optional[Dict[str, Any]]) -> InferenceInputs:
     config = config or dict()
+    logging.info(f"Preparing inputs from config: {config}")
     if "img_uri" in config:
-        img = download_img(config["img_uri"], slack_token=get_secret("john-test-slack-bot-token"))
+        # TODO: Do this with regex.
+        # Slack adds some formatting to urls so we need to remove it.
+        img_uri = config["img_uri"]
+        img_uri = img_uri[1:-1]
+        img = download_img(img_uri, slack_token=get_secret("john-test-slack-bot-token"))
         config["init_img"] = img
         del config["img_uri"]
     return InferenceInputs(prompt=prompt, **config)
