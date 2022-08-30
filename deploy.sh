@@ -1,4 +1,7 @@
 #!/bin/bash
+set -e
+set -u
+set -o pipefail
 
 # TODO: temporary script for deploying image.
 # - Should live on CI instead with proper tagging etc.
