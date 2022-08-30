@@ -18,6 +18,11 @@ from .inference import InferenceProcess
 from .inference import InferenceTask
 from .utils import get_secret
 
+# TODO:
+# - Improve help strings when something goes wrong.
+# - If mention is "some text @burgerman some other text", are we
+#   handling it correctly?
+
 logging.basicConfig(level=logging.INFO)
 
 # Create the Slack app.
@@ -65,23 +70,23 @@ def skip_retries(request: BoltRequest, next: Callable):
 
 @app.event("app_mention", middleware=[skip_retries])
 def app_mention(body: Dict[str, Any], say: Say):
+    thread_ts = body["event"]["ts"]
+
+    # Get the query from the @mention message.
     raw_event_text = body["event"]["text"]
     raw_event_query_match = re.search(r"(<@.*>) (.*)", raw_event_text)
-
     if raw_event_query_match is None:
-        # TODO: Write this as a thread response instead + help string.
-        say("Hey! You have to write a text prompt too!")
+        say("Hey! You have to write a text prompt too!", thread_ts=thread_ts)
         return
 
+    # Parse the inputs.
     query_msg = raw_event_query_match.group(2)
     inference_inputs = parse_inputs(query_msg)
-
     if inference_inputs is None:
-        # TODO: Write this as a thread response instead + help string.
-        # TODO: Show if it was validation error?
-        say("Hey! I couldn't parse that request properly!")
+        say("Hey! I couldn't parse that request properly!", thread_ts=thread_ts)
         return
 
+    # Queue up the inference request.
     say(f"Hey! I'll generate an image for {inference_inputs.prompt}")
     task_queue.put(InferenceTask(inputs=inference_inputs, channel=say.channel))
 
