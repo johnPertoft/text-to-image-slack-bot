@@ -15,19 +15,20 @@ from transformers import CLIPFeatureExtractor
 from transformers import CLIPTextModel
 from transformers import CLIPTokenizer
 
+# TODO: This will be in next release I think.
 from .contrib import StableDiffusionImg2ImgPipeline  # type: ignore
 
 
 def preprocess_img(image: Image.Image) -> torch.FloatTensor:
-    # TODO: The collab was running with a t4 too, why wasn't it running
-    # out of mem with 512x1024 img?
-
-    # TODO: Do resizing + cropping properly instead.
-    # TODO: Needs to be a multiple of 32.
+    # TODO:
+    # - The collab was running with a t4 too, why wasn't it running
+    #   out of mem with 512x1024 img?
+    # - Do resizing + cropping properly instead.
+    # - Needs to be a multiple of 32. Add assertion.
     w, h = image.size
-    if w / h >= 1.5:
+    if w / h >= 1.3:
         image = image.resize((768, 512), resample=Image.LANCZOS)
-    elif h >= 1.5:
+    elif h / w >= 1.3:
         image = image.resize((512, 768), resample=Image.LANCZOS)
     else:
         image = image.resize((512, 512), resample=Image.LANCZOS)
