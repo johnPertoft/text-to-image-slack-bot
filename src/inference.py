@@ -65,6 +65,7 @@ class InferenceProcess(mp.Process):
                 generator=random_generator,
             )
 
+        # TODO: Pass along some info about nsfw detected here instead.
         img = results["sample"][0]
         return img
 
