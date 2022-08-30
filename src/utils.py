@@ -7,6 +7,8 @@ import requests  # type: ignore
 from google.cloud import secretmanager
 from PIL import Image
 
+from .errors import DownloadError
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -37,4 +39,4 @@ def download_img(url: str) -> Optional[Image.Image]:
     except Exception as e:
         # TODO: Catch only expected errors.
         logging.exception(f"Exception when downloading image: {e}")
-        return None
+        raise DownloadError()

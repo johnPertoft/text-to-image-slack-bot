@@ -14,6 +14,7 @@ from slack_bolt import App
 from slack_bolt import BoltRequest
 from slack_bolt import Say
 
+from .errors import DownloadError
 from .inference import InferenceInputs
 from .inference import InferenceProcess
 from .inference import InferenceTask
@@ -27,6 +28,7 @@ from .utils import get_secret
 # - Convert to AsyncApp, since we're doing some downloading of images potentially.
 # - Handle error at different stages better.
 # - Restart inference process if it dies. Use multiprocessing.Pool with one worker instead?
+# - Maybe utilize middleware to do error handling?
 
 logging.basicConfig(level=logging.INFO)
 
@@ -57,24 +59,18 @@ def parse_query(query_msg: str) -> Tuple[str, Optional[Dict[str, Any]]]:
         config_str = config_str.replace(",", "\n")
         config_str = f"[config]\n{config_str}"
         config = configparser.ConfigParser()
-        try:
-            config.read_string(config_str)
-            config_d = dict(config["config"])
-            return prompt_str, config_d
-        except configparser.ParsingError:
-            return prompt_str, None
+        config.read_string(config_str)
+        config_d = dict(config["config"])
+        return prompt_str, config_d
 
 
-def prepare_inputs(prompt: str, config: Optional[Dict[str, Any]]) -> Optional[InferenceInputs]:
+def prepare_inputs(prompt: str, config: Optional[Dict[str, Any]]) -> InferenceInputs:
     config = config or dict()
     if "img_uri" in config:
         img = download_img(config["img_uri"])
         config["init_img"] = img
         del config["img_uri"]
-    try:
-        return InferenceInputs(prompt=prompt, **config)
-    except ValidationError:
-        return None
+    return InferenceInputs(prompt=prompt, **config)
 
 
 @app.middleware
@@ -88,19 +84,32 @@ def skip_retries(request: BoltRequest, next: Callable):
 def app_mention(body: Dict[str, Any], say: Say):
     thread_ts = body["event"]["ts"]
 
+    def say_error(msg: str):
+        say(msg, thread_ts=thread_ts)
+
     # Get the query from the @mention message.
     raw_event_text = body["event"]["text"]
     raw_event_query_match = re.search(r"(<@.*>) (.*)", raw_event_text)
     if raw_event_query_match is None:
-        say("Hey! You have to write a text prompt too!", thread_ts=thread_ts)
+        say_error("Oops! You have to write a text prompt too!")
+        return
+    query_msg = raw_event_query_match.group(2)
+
+    # Parse prompt and optional configuration.
+    try:
+        prompt, config = parse_query(query_msg)
+    except configparser.ParsingError:
+        say_error("Oops! I couldn't parse that configuration.")
         return
 
-    # Parse and prepare the inputs.
-    query_msg = raw_event_query_match.group(2)
-    prompt, config = parse_query(query_msg)
-    inference_inputs = prepare_inputs(prompt, config)
-    if inference_inputs is None:
-        say("Hey! I couldn't parse that request properly!", thread_ts=thread_ts)
+    # Prepare inputs.
+    try:
+        inference_inputs = prepare_inputs(prompt, config)
+    except DownloadError:
+        say_error("Oops! I couldn't download that image.")
+        return
+    except ValidationError:
+        say_error("Oops! I couldn't validate those inputs.")
         return
 
     # Queue up the inference request.
