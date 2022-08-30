@@ -105,7 +105,13 @@ def app_mention(body: Dict[str, Any], say: Say):
 
     # Queue up the inference request.
     say(f"Hey! I'll generate an image for {inference_inputs.prompt}")
-    task_queue.put(InferenceTask(inputs=inference_inputs, channel=say.channel))
+    task_queue.put(
+        InferenceTask(
+            inputs=inference_inputs,
+            channel=say.channel,
+            title=query_msg,
+        )
+    )
 
 
 if __name__ == "__main__":
