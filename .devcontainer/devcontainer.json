@@ -12,7 +12,7 @@
         "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind,consistency=cached",
 		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
     ],
-	"postAttachCommand": "direnv allow && pre-commit install",
+	"postAttachCommand": "touch .envrc && direnv allow && pre-commit install",
 	"customizations": {
 		"vscode": {
 			"settings": {
