@@ -74,6 +74,7 @@ class InferenceProcess(mp.Process):
                 height=height,
                 width=width,
                 generator=random_generator,
+                nsfw_allowed=inputs.nsfw_allowed,
             )
         else:
             init_img = preprocess_img(inputs.init_img)
@@ -84,11 +85,12 @@ class InferenceProcess(mp.Process):
                 guidance_scale=inputs.guidance_scale,
                 strength=inputs.strength,
                 generator=random_generator,
+                nsfw_allowed=inputs.nsfw_allowed,
             )
 
-        # TODO: Pass along some info about nsfw detected here instead.
         img = results["sample"][0]
-        return img
+        nsfw_content_detected = results["nsfw_content_detected"]
+        return img, nsfw_content_detected
 
     def run(self):
         # Need to make sure to load the model in this forked process rather than
@@ -99,10 +101,13 @@ class InferenceProcess(mp.Process):
         while True:
             task = self.task_queue.get()
             logging.info(f"Handling request: {task}")
-            img = self.generate(pipe, task.inputs)
+            img, nsfw_detected = self.generate(pipe, task.inputs)
             buffer = io.BytesIO()
             img.save(buffer, format="PNG")
             img_bytes = buffer.getvalue()
+            # TODO: Write in thread if nsfw was detected and skip upload.
+            if nsfw_detected:
+                logging.info("Detected NSFW output")
             self.slack_client.files_upload(
                 channels=task.channel,
                 title=task.title,
