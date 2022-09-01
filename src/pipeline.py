@@ -41,14 +41,8 @@ def preprocess_img(image: Image.Image) -> torch.FloatTensor:
 
 class BurgermanPipeline:
     def __init__(self, pipeline_path: str):
-        # TODO: Correct models being used? Blog post specified "openai/clip-vit-large-patch14"
-        # for text encoder.
-
-        # TODO: Fix this warning? ftfy or spacy is not installed using BERT BasicTokenizer
-        # instead of ftfy.
-
-        # TODO: Potentially replace the contrib pipeline since it barely does anything different
-        # I think? Only replaces the initial latent from the input image.
+        # TODO: Just implement the custom pipeline that can optionally take the image as input
+        # instead of having these two here?
 
         # TODO: Experiment with different schedulers. See blog post.
 
@@ -61,6 +55,20 @@ class BurgermanPipeline:
         vae = AutoencoderKL.from_pretrained(pipeline_dir / "vae")
         unet = UNet2DConditionModel.from_pretrained(pipeline_dir / "unet")
         scheduler = PNDMScheduler.from_config(pipeline_dir / "scheduler")
+
+        # TODO: How to define these so that they're bypassed when nsfw_allowed=True
+        # is passed at call time?
+        """
+        # run safety checker
+        safety_cheker_input = self.feature_extractor(
+            self.numpy_to_pil(image), return_tensors="pt").to(self.device)
+        image, has_nsfw_concept = self.safety_checker(
+            images=image, clip_input=safety_cheker_input.pixel_values)
+        """
+
+        def dummy_safety_checker(images, *args, **kwargs):
+            has_nsfw_concept = False
+            return images, has_nsfw_concept
 
         # TODO: Could potentially patch out the nsfw filter here by just supplying functions
         # returning false?

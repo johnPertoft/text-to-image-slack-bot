@@ -27,6 +27,7 @@ class InferenceInputs(BaseModel):
     guidance_scale: float = Field(default=7.5, ge=1.0, le=15.0)
     strength: float = Field(default=0.8, ge=0.0, le=1.0)
     format: Literal["square", "tall", "wide"] = "square"
+    nsfw_allowed: bool = False
 
     class Config:
         arbitrary_types_allowed = True
