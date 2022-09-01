@@ -21,7 +21,7 @@ def get_secret(secret_name: str) -> str:
 
 
 @functools.lru_cache(maxsize=512)
-def download_img(url: str, slack_token: Optional[str]) -> Optional[Image.Image]:
+def download_img(url: str, slack_token: Optional[str] = None) -> Optional[Image.Image]:
     p = urlparse(url)
     if p.netloc == "files.slack.com" and slack_token is not None:
         headers = {"Authorization": "Bearer " + slack_token}
