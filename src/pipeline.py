@@ -47,11 +47,9 @@ def maybe_bypass_nsfw(pipe, nsfw_allowed: bool):
         return images, has_nsfw_concept
 
     original_safety_checker = pipe.safety_checker
-
     if nsfw_allowed:
         pipe.safety_checker = dummy_safety_checker
     yield pipe
-
     pipe.safety_checker = original_safety_checker
 
 
