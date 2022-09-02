@@ -106,8 +106,6 @@ class InferenceProcess(mp.Process):
             buffer = io.BytesIO()
             img.save(buffer, format="PNG")
             img_bytes = buffer.getvalue()
-            # TODO: Write in thread if nsfw was detected and skip upload.
-            # TODO: Be consistent in use of "raw" client vs whatever bolt adds on top?
             if nsfw_detected:
                 self.slack_client.chat_postMessage(
                     text="Oops! I generated something NSFW",
