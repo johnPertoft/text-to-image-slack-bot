@@ -36,6 +36,7 @@ class InferenceInputs(BaseModel):
 class InferenceTask(BaseModel):
     inputs: InferenceInputs
     channel: str
+    thread_ts: str
     title: str
 
 
@@ -106,10 +107,16 @@ class InferenceProcess(mp.Process):
             img.save(buffer, format="PNG")
             img_bytes = buffer.getvalue()
             # TODO: Write in thread if nsfw was detected and skip upload.
+            # TODO: Be consistent in use of "raw" client vs whatever bolt adds on top?
             if nsfw_detected:
-                logging.info("Detected NSFW output")
-            self.slack_client.files_upload(
-                channels=task.channel,
-                title=task.title,
-                content=img_bytes,
-            )
+                self.slack_client.chat_postMessage(
+                    text="Oops! I generated something NSFW",
+                    channel=task.channel,
+                    thread_ts=task.thread_ts,
+                )
+            else:
+                self.slack_client.files_upload(
+                    channels=task.channel,
+                    title=task.title,
+                    content=img_bytes,
+                )

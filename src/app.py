@@ -128,6 +128,7 @@ def app_mention(body: Dict[str, Any], say: Say):
         InferenceTask(
             inputs=inference_inputs,
             channel=say.channel,
+            thread_ts=thread_ts,
             title=query_msg,
         )
     )
