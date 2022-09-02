@@ -27,6 +27,7 @@ class InferenceInputs(BaseModel):
     guidance_scale: float = Field(default=7.5, ge=1.0, le=15.0)
     strength: float = Field(default=0.8, ge=0.0, le=1.0)
     format: Literal["square", "tall", "wide"] = "square"
+    nsfw_allowed: bool = False
 
     class Config:
         arbitrary_types_allowed = True
@@ -35,6 +36,7 @@ class InferenceInputs(BaseModel):
 class InferenceTask(BaseModel):
     inputs: InferenceInputs
     channel: str
+    thread_ts: str
     title: str
 
 
@@ -73,6 +75,7 @@ class InferenceProcess(mp.Process):
                 height=height,
                 width=width,
                 generator=random_generator,
+                nsfw_allowed=inputs.nsfw_allowed,
             )
         else:
             init_img = preprocess_img(inputs.init_img)
@@ -83,11 +86,12 @@ class InferenceProcess(mp.Process):
                 guidance_scale=inputs.guidance_scale,
                 strength=inputs.strength,
                 generator=random_generator,
+                nsfw_allowed=inputs.nsfw_allowed,
             )
 
-        # TODO: Pass along some info about nsfw detected here instead.
         img = results["sample"][0]
-        return img
+        nsfw_content_detected = results["nsfw_content_detected"]
+        return img, nsfw_content_detected
 
     def run(self):
         # Need to make sure to load the model in this forked process rather than
@@ -98,12 +102,19 @@ class InferenceProcess(mp.Process):
         while True:
             task = self.task_queue.get()
             logging.info(f"Handling request: {task}")
-            img = self.generate(pipe, task.inputs)
+            img, nsfw_detected = self.generate(pipe, task.inputs)
             buffer = io.BytesIO()
             img.save(buffer, format="PNG")
             img_bytes = buffer.getvalue()
-            self.slack_client.files_upload(
-                channels=task.channel,
-                title=task.title,
-                content=img_bytes,
-            )
+            if nsfw_detected:
+                self.slack_client.chat_postMessage(
+                    text="Oops! I generated something NSFW",
+                    channel=task.channel,
+                    thread_ts=task.thread_ts,
+                )
+            else:
+                self.slack_client.files_upload(
+                    channels=task.channel,
+                    title=task.title,
+                    content=img_bytes,
+                )

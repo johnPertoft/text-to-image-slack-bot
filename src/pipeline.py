@@ -1,3 +1,4 @@
+import contextlib
 from pathlib import Path
 from typing import List
 from typing import Optional
@@ -39,16 +40,23 @@ def preprocess_img(image: Image.Image) -> torch.FloatTensor:
     return 2.0 * image - 1.0
 
 
+@contextlib.contextmanager
+def maybe_bypass_nsfw(pipe, nsfw_allowed: bool):
+    def dummy_safety_checker(images, *args, **kwargs):
+        has_nsfw_concept = False
+        return images, has_nsfw_concept
+
+    original_safety_checker = pipe.safety_checker
+    if nsfw_allowed:
+        pipe.safety_checker = dummy_safety_checker
+    yield pipe
+    pipe.safety_checker = original_safety_checker
+
+
 class BurgermanPipeline:
     def __init__(self, pipeline_path: str):
-        # TODO: Correct models being used? Blog post specified "openai/clip-vit-large-patch14"
-        # for text encoder.
-
-        # TODO: Fix this warning? ftfy or spacy is not installed using BERT BasicTokenizer
-        # instead of ftfy.
-
-        # TODO: Potentially replace the contrib pipeline since it barely does anything different
-        # I think? Only replaces the initial latent from the input image.
+        # TODO: Just implement the custom pipeline that can optionally take the image as input
+        # instead of having these two here?
 
         # TODO: Experiment with different schedulers. See blog post.
 
@@ -61,9 +69,6 @@ class BurgermanPipeline:
         vae = AutoencoderKL.from_pretrained(pipeline_dir / "vae")
         unet = UNet2DConditionModel.from_pretrained(pipeline_dir / "unet")
         scheduler = PNDMScheduler.from_config(pipeline_dir / "scheduler")
-
-        # TODO: Could potentially patch out the nsfw filter here by just supplying functions
-        # returning false?
         feature_extractor = CLIPFeatureExtractor.from_pretrained(pipeline_dir / "feature_extractor")
         safety_checker = StableDiffusionSafetyChecker.from_pretrained(
             pipeline_dir / "safety_checker"
@@ -108,20 +113,23 @@ class BurgermanPipeline:
         eta: Optional[float] = 0.0,
         generator: Optional[torch.Generator] = None,
         output_type: Optional[str] = "pil",
+        nsfw_allowed: bool = False,
         **kwargs,
     ):
-        with torch.autocast(self.text2img.device.type):
-            return self.text2img(
-                prompt,
-                height,
-                width,
-                num_inference_steps,
-                guidance_scale,
-                eta,
-                generator,
-                output_type,
-                **kwargs,
-            )
+        pipe = self.text2img
+        with maybe_bypass_nsfw(pipe, nsfw_allowed):
+            with torch.autocast(self.text2img.device.type):  # TODO: Can this be a decorator?
+                return pipe(
+                    prompt,
+                    height,
+                    width,
+                    num_inference_steps,
+                    guidance_scale,
+                    eta,
+                    generator,
+                    output_type,
+                    **kwargs,
+                )
 
     @torch.no_grad()
     def from_text_and_image(
@@ -134,15 +142,18 @@ class BurgermanPipeline:
         eta: Optional[float] = 0.0,
         generator: Optional[torch.Generator] = None,
         output_type: Optional[str] = "pil",
+        nsfw_allowed: bool = False,
     ):
-        with torch.autocast(self.img2img.device.type):
-            return self.img2img(
-                prompt,
-                init_image,
-                strength,
-                num_inference_steps,
-                guidance_scale,
-                eta,
-                generator,
-                output_type,
-            )
+        pipe = self.img2img
+        with maybe_bypass_nsfw(pipe, nsfw_allowed):
+            with torch.autocast(self.img2img.device.type):
+                return pipe(
+                    prompt,
+                    init_image,
+                    strength,
+                    num_inference_steps,
+                    guidance_scale,
+                    eta,
+                    generator,
+                    output_type,
+                )
