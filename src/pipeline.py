@@ -43,7 +43,7 @@ def preprocess_img(image: Image.Image) -> torch.FloatTensor:
 @contextlib.contextmanager
 def maybe_bypass_nsfw(pipe, nsfw_allowed: bool):
     def dummy_safety_checker(images, *args, **kwargs):
-        has_nsfw_concept = False
+        has_nsfw_concept = [False] * len(images)
         return images, has_nsfw_concept
 
     original_safety_checker = pipe.safety_checker
