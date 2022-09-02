@@ -90,7 +90,7 @@ class InferenceProcess(mp.Process):
             )
 
         img = results["sample"][0]
-        nsfw_content_detected = results["nsfw_content_detected"]
+        nsfw_content_detected = results["nsfw_content_detected"][0]
         return img, nsfw_content_detected
 
     def run(self):
@@ -107,16 +107,14 @@ class InferenceProcess(mp.Process):
             img.save(buffer, format="PNG")
             img_bytes = buffer.getvalue()
             if nsfw_detected:
-                logging.info("HMMMM")
-            # if nsfw_detected:
-            #     self.slack_client.chat_postMessage(
-            #         text="Oops! I generated something NSFW",
-            #         channel=task.channel,
-            #         thread_ts=task.thread_ts,
-            #     )
-            # else:
-            self.slack_client.files_upload(
-                channels=task.channel,
-                title=task.title,
-                content=img_bytes,
-            )
+                self.slack_client.chat_postMessage(
+                    text="Oops! I generated something NSFW",
+                    channel=task.channel,
+                    thread_ts=task.thread_ts,
+                )
+            else:
+                self.slack_client.files_upload(
+                    channels=task.channel,
+                    title=task.title,
+                    content=img_bytes,
+                )
