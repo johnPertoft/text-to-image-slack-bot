@@ -1,24 +1,26 @@
-# text-to-image-slack-bot
-Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
+# Text to Image Slack Bot (Stable-diffusion)
 
-https://stable-diffusion.ml.embark.net/slack/events
+## Basic information
+|   |   |
+|---|---|
+|Slack application home|https://api.slack.com/apps/A03U9439A5U/event-subscriptions|
+|Api endpoint|https://stable-diffusion.ml.embark.net/slack/events|
+|container image|`gcr.io/embark-shared/ml2/john-stable-diffusion`|
 
 ## TODO
 - [ ] Figure out why regular python/ubuntu image is not working on ml cluster with gpus.
 - [ ] Have a single Dockerfile, with multiple build targets for dev container and prod.
-- [ ] Automatic build/deploys via CI.
-- [ ] Add option to pass in arguments to model inference.
-- [ ] Restrict ip ranges for requests?
-- [ ] Use slack SocketMode instead?
+- [ ] Automatic build/deploys via CI. Probably with cloud build.
 - [ ] Fix temporary names like john-text- prefixes
 - [ ] Save all generated images in some bucket/bigquery?
-- [ ] Maybe build via cloud build?
-- [ ] Add support for image as input?
 - [ ] Add support for image inpainting?
 
 ## Setup
 <details>
 <summary>Click to expand</summary>
+
+### Local environment secrets
+Put secrets in `.envrc`, they will be automatically loaded by `direnv`.
 
 ### Create secrets
 ```bash
@@ -45,7 +47,9 @@ gcloud secrets add-iam-policy-binding john-test-slack-signing-secret \
 
 </details>
 
-## How to run
+## How to run locally
+<details>
+<summary>Click to expand</summary>
 
 1. ```bash
    python -m src.app
@@ -57,8 +61,4 @@ gcloud secrets add-iam-policy-binding john-test-slack-signing-secret \
    ```
 3. Update request url for event subscription: https://api.slack.com/apps/A03U9439A5U/event-subscriptions?
 
-## Derp derp
-```bash
-# TODO: missing credentials for this depending on service account?
-gcloud builds submit --tag gcr.io/embark-nlp/john-test
-```
+</details>
