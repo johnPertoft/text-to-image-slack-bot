@@ -4,41 +4,49 @@
 This script simulates a post request as sent from Slack on app_mention events.
 """
 
+import json
+import os
+import subprocess
+
 import requests  # type: ignore
 
-# TODO: Need to handle the slack api call back after generating somehow.
-# TODO: Need to override the base url or something? Or just verify what it looks like
-# or something.
-# TODO: Check for slack api mock libs maybe.
+# TODO:
+# - Pass proper headers, like x-slack-signature and x-slack-request-timestamp
+# - Then run app with request verification on
+# - Need to pass some mock slack client.
+# - How to generate a realistic slack formatted input text? E.g. link formatting etc.
+#   See https://api.slack.com/reference/surfaces/formatting#escaping
 
-# TODO: Take as input?
-url = "https://b17d-34-90-75-154.eu.ngrok.io/slack/events"
 
-# TODO: Need these in case we want to run with request verification.
-# TODO: But can probably skip it.
-# x-slack-signature
-# x-slack-request-timestamp
+assert "NGROK_API_KEY" in os.environ, "NGROK_API_KEY environment variable expected"
+ngrok_api_key = os.environ["NGROK_API_KEY"]
+ngrok_output_str = subprocess.check_output(
+    f"ngrok api tunnels list --api-key {ngrok_api_key}", stderr=subprocess.DEVNULL, shell=True
+)
+ngrok_output = json.loads(ngrok_output_str)
+assert len(ngrok_output["tunnels"]) > 0, "Is ngrok running?"
+public_url = ngrok_output["tunnels"][0]["public_url"]
+url = f"{public_url}/slack/events"
 
 headers = {"Content-Type": "application/json"}
 
-# TODO: Set relevant values here.
+# Note: This seems to be the minimal body required to reach the app_mention handler function.
+# See https://api.slack.com/apis/connections/events-api#receiving_events
+# for how this body is actually expected to look.
 body = {
-    "token": "xxxxxx",
-    "team_id": "TXXXXXXXX",
-    "api_app_id": "A03U9439A5U",
+    "team_id": "dummy-team-id",
+    "type": "event_callback",
     "event": {
         "type": "app_mention",
-        "ts": "asdadadada",
+        "ts": "dummy-event-ts",
         "event_ts": "1234567890.123456",
-        "user": "UXXXXXXX1",
+        "user": "dummy-user-id",
     },
-    "type": "event_callback",
-    "authorizations": [
-        {"enterprise_id": "E12345", "team_id": "T12345", "user_id": "U12345", "is_bot": False}
-    ],
-    "event_context": "EC12345",
-    "event_id": "Ev08MFMKH6",
-    "event_time": 1234567890,
 }
 
-requests.post(url, headers=headers, json=body)
+resp = requests.post(url, headers=headers, json=body)
+
+# TODO: Even if the handler code fails, this is a 200.
+# Maybe from some ack() in a middleware function?
+# TODO: How do we verify that everything "works"?
+print(resp)
