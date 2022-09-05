@@ -6,7 +6,9 @@ This script simulates a post request as sent from Slack on app_mention events.
 
 import json
 import os
+import shlex
 import subprocess
+import sys
 
 import requests  # type: ignore
 
@@ -16,6 +18,7 @@ import requests  # type: ignore
 # - Need to pass some mock slack client.
 # - How to generate a realistic slack formatted input text? E.g. link formatting etc.
 #   See https://api.slack.com/reference/surfaces/formatting#escaping
+# - How to verify that it's working as expected?
 
 
 assert "NGROK_API_KEY" in os.environ, "NGROK_API_KEY environment variable expected"
@@ -30,6 +33,13 @@ url = f"{public_url}/slack/events"
 
 headers = {"Content-Type": "application/json"}
 
+if len(sys.argv) > 1:
+    query = shlex.join(sys.argv[1:])
+else:
+    query = "a horse in space"
+
+event_text = f"<@bot-id> {query}"
+
 # Note: This seems to be the minimal body required to reach the app_mention handler function.
 # See https://api.slack.com/apis/connections/events-api#receiving_events
 # for how this body is actually expected to look.
@@ -41,12 +51,9 @@ body = {
         "ts": "dummy-event-ts",
         "event_ts": "1234567890.123456",
         "user": "dummy-user-id",
+        "text": event_text,
     },
 }
 
 resp = requests.post(url, headers=headers, json=body)
-
-# TODO: Even if the handler code fails, this is a 200.
-# Maybe from some ack() in a middleware function?
-# TODO: How do we verify that everything "works"?
 print(resp)
