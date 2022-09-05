@@ -3,7 +3,7 @@
 ## Basic information
 |   |   |
 |---|---|
-|Slack application home|https://api.slack.com/apps/A03U9439A5U/event-subscriptions|
+|Slack application home|https://api.slack.com/apps/A03U9439A5U/|
 |Api endpoint|https://stable-diffusion.ml.embark.net/slack/events|
 |container image|`gcr.io/embark-shared/ml2/john-stable-diffusion`|
 
