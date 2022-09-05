@@ -42,6 +42,11 @@ argparser.add_argument(
 )
 args = argparser.parse_args()
 
+if args.skip_request_verification:
+    logging.warning(
+        "Running app without request verification! This should not be done in production!"
+    )
+
 # Create the Slack app.
 app = App(
     token=get_secret("john-test-slack-bot-token"),
@@ -103,10 +108,6 @@ def skip_retries(request: BoltRequest, next: Callable):
 
 @app.event("app_mention", middleware=[skip_retries])
 def app_mention(body: Dict[str, Any], say: Say):
-    import pdb
-
-    pdb.set_trace()
-
     thread_ts = body["event"]["ts"]
 
     def say_error(msg: str):
