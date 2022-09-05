@@ -106,6 +106,7 @@ RUN pip install \
     diffusers \
     ftfy \
     google-cloud-secret-manager \
+    jupyter \
     numpy \
     pydantic \
     slack_bolt \
