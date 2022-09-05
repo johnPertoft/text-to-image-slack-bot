@@ -45,6 +45,7 @@ event_text = f"<@bot-id> {query}"
 # for how this body is actually expected to look.
 body = {
     "team_id": "dummy-team-id",
+    "channel_id": "dummy-channel-id",
     "type": "event_callback",
     "event": {
         "type": "app_mention",
