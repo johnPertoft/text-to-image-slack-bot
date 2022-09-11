@@ -1,3 +1,4 @@
+import argparse
 import configparser
 import logging
 import multiprocessing as mp
@@ -32,10 +33,25 @@ from .utils import get_secret
 
 logging.basicConfig(level=logging.INFO)
 
+argparser = argparse.ArgumentParser()
+argparser.add_argument(
+    "--skip_request_verification",
+    default=False,
+    action="store_true",
+    help="Whether request verification should be skipped. Useful for local testing.",
+)
+args = argparser.parse_args()
+
+if args.skip_request_verification:
+    logging.warning(
+        "Running app without request verification! This should not be done in production!"
+    )
+
 # Create the Slack app.
 app = App(
     token=get_secret("john-test-slack-bot-token"),
     signing_secret=get_secret("john-test-slack-signing-secret"),
+    request_verification_enabled=not args.skip_request_verification,
 )
 
 # Create and start the inference process.
@@ -87,7 +103,7 @@ def prepare_inputs(prompt: str, config: Optional[Dict[str, Any]]) -> InferenceIn
 def skip_retries(request: BoltRequest, next: Callable):
     if "X-Slack-Retry-Num" in request.headers:
         return
-    next()
+    return next()
 
 
 @app.event("app_mention", middleware=[skip_retries])
