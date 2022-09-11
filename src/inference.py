@@ -102,10 +102,16 @@ class InferenceProcess(mp.Process):
         while True:
             task = self.task_queue.get()
             logging.info(f"Handling request: {task}")
-            img, nsfw_detected = self.generate(pipe, task.inputs)
+            try:
+                img, nsfw_detected = self.generate(pipe, task.inputs)
+            except RuntimeError as e:
+                logging.error(f"Runtime error when generating: {e}.")
+                torch.cuda.empty_cache()
+
             buffer = io.BytesIO()
             img.save(buffer, format="PNG")
             img_bytes = buffer.getvalue()
+
             if nsfw_detected:
                 self.slack_client.chat_postMessage(
                     text="Oops! I generated something NSFW",
