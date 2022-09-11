@@ -15,10 +15,9 @@ import requests  # type: ignore
 # TODO:
 # - Pass proper headers, like x-slack-signature and x-slack-request-timestamp
 # - Then run app with request verification on
-# - Need to pass some mock slack client.
+# - Need to pass some mock slack client to verify what should happen.
 # - How to generate a realistic slack formatted input text? E.g. link formatting etc.
 #   See https://api.slack.com/reference/surfaces/formatting#escaping
-# - How to verify that it's working as expected?
 
 
 assert "NGROK_API_KEY" in os.environ, "NGROK_API_KEY environment variable expected"
