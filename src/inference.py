@@ -113,6 +113,10 @@ class InferenceProcess(mp.Process):
                     thread_ts=task.thread_ts,
                 )
             else:
+                # TODO: Write a string to reproduce this image with
+                # TODO: Add a new basemodel class to represent validated query inputs
+                # in addition to what we actually put into the model?
+
                 self.slack_client.files_upload(
                     channels=task.channel,
                     title=task.title,
