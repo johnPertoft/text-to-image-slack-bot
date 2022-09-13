@@ -19,7 +19,6 @@ class InferenceTask(BaseModel):
     inputs: CombinedPipelineInputs
     channel: str
     thread_ts: str
-    title: str
 
 
 class InferenceProcess(mp.Process):
@@ -59,13 +58,20 @@ class InferenceProcess(mp.Process):
                     thread_ts=task.thread_ts,
                 )
             else:
-                # TODO: Write a string to reproduce this image with
-                # TODO: Add a new basemodel class to represent validated query inputs
-                # in addition to what we actually put into the model?
-                # TODO: Everything should be present for this now.
+                config = task.inputs.dict()
+                prompt = config.pop("prompt")
+                config_str = ", ".join(f"{k}={v}" for k, v in config.items() if v is not None)
+                command_to_reproduce = f"Use this command to reproduce the same result:\n`@burgerman {config_str} | {prompt}`"  # noqa: E501
 
                 self.slack_client.files_upload(
                     channels=task.channel,
-                    title=task.title,
+                    title=task.inputs.prompt,
                     content=img_bytes,
+                )
+
+                # TODO: Should post to the message with the image? Now it's the query message. Hmm.
+                self.slack_client.chat_postMessage(
+                    text=command_to_reproduce,
+                    channel=task.channel,
+                    thread_ts=task.thread_ts,
                 )

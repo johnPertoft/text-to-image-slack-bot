@@ -115,6 +115,9 @@ def app_mention(body: Dict[str, Any], say: Say):
     except ParseQueryException as e:
         say_in_thread(f"Oops! {e}\n\n{USAGE_STR}")
         return
+    except ValidationError:
+        say_in_thread(f"Oops! I couldn't validate those inputs!\n\n{USAGE_STR}")
+        return
 
     try:
         pipeline_inputs = prepare_pipeline_inputs(query)
@@ -136,7 +139,6 @@ def app_mention(body: Dict[str, Any], say: Say):
             inputs=pipeline_inputs,
             channel=say.channel,
             thread_ts=thread_ts,
-            title=query.prompt,
         )
     )
 
