@@ -37,7 +37,7 @@ if len(sys.argv) > 1:
 else:
     # TODO: Links can be formatted with a display text
     # like <https://google.com|Link text>
-    query = "img_uri=<https://google.com/img.png> | a horse in space"
+    query = "img_url=<https://google.com/img.png> | a horse in space"
 
 event_text = f"<@bot-id> {query}"
 

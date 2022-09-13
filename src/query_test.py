@@ -29,32 +29,32 @@ def test_simple_config():
 
 
 def test_config_with_uri():
-    raw = "<@burgerman> img_uri=<https://test.url/img.png> | a red apple"
+    raw = "<@burgerman> img_url=<https://test.url/img.png> | a red apple"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_uri == "https://test.url/img.png"
+    assert q.img_url == "https://test.url/img.png"
 
 
 def test_config_with_uri_with_commas():
-    raw = "<@burgerman> img_uri=<https://test.url/img.png?abc=1,2,3> | a red apple"
+    raw = "<@burgerman> img_url=<https://test.url/img.png?abc=1,2,3> | a red apple"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_uri == "https://test.url/img.png?abc=1,2,3"
+    assert q.img_url == "https://test.url/img.png?abc=1,2,3"
 
 
 def test_config_with_uri_last():
-    raw = "<@burgerman> seed=123, img_uri=<https://test.url/img.png?abc=1,2,3> | a red apple"
+    raw = "<@burgerman> seed=123, img_url=<https://test.url/img.png?abc=1,2,3> | a red apple"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_uri == "https://test.url/img.png?abc=1,2,3"
+    assert q.img_url == "https://test.url/img.png?abc=1,2,3"
     assert q.seed == 123
 
 
 def test_config_with_extra_spaces():
-    raw = "<@burgerman> seed = 123 , img_uri= <https://test.url/img.png?abc=1,2,3> | a red apple"
+    raw = "<@burgerman> seed = 123 , img_url= <https://test.url/img.png?abc=1,2,3> | a red apple"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_uri == "https://test.url/img.png?abc=1,2,3"
+    assert q.img_url == "https://test.url/img.png?abc=1,2,3"
     assert q.seed == 123
 
 
@@ -88,16 +88,16 @@ def test_invalid_config_value():
         parse_query(raw)
 
 
-def test_misspelled_img_uri():
-    # Note: img_urL not img_urI here.
-    raw = "<@burgerman> img_url=<https://test.url/img.png?abc=1,2,3> | a red apple"
+def test_misspelled_img_url():
+    # Note: img_uri not img_urL here.
+    raw = "<@burgerman> img_uri=<https://test.url/img.png?abc=1,2,3> | a red apple"
     with pytest.raises(ValidationError):
         parse_query(raw)
 
 
 def test_text_before_mention():
-    raw = "here is some text followed by <@burgerman> seed=123, img_uri=<https://test.url/img.png?abc=1,2,3> | a red apple"  # noqa: E501
+    raw = "here is some text followed by <@burgerman> seed=123, img_url=<https://test.url/img.png?abc=1,2,3> | a red apple"  # noqa: E501
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_uri == "https://test.url/img.png?abc=1,2,3"
+    assert q.img_url == "https://test.url/img.png?abc=1,2,3"
     assert q.seed == 123

@@ -13,7 +13,7 @@ from pydantic import HttpUrl
 class Query(BaseModel):
     prompt: str
     seed: Optional[int]
-    img_uri: Optional[HttpUrl]
+    img_url: Optional[HttpUrl]
     num_inference_steps: int = Field(default=50, ge=1, le=100)
     guidance_scale: float = Field(default=7.5, ge=1.0, le=15.0)
     strength: float = Field(default=0.8, ge=0.0, le=1.0)

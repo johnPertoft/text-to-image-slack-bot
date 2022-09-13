@@ -38,13 +38,13 @@ USAGE_STR = """
 Usage examples
 @burgerman A horse in space
 @burgerman seed=123, format=wide | A horse in space
-@burgerman img_uri=https://url.to.my/image.png | A horse in space
+@burgerman img_url=https://url.to.my/image.png | A horse in space
 
 Config options
 seed: int
 num_inference_steps: int: [1, 100], default 50
 guidance_scale: float: [1.0, 15.0], default 7.5
-img_uri: HttpUrl, use this image as starting image in img2img
+img_url: HttpUrl, use this image as starting image in img2img
 strength: float: [0.0, 1.0], default 0.8, only used for img2img
 format: Literal["square", "tall", "wide"] default square, not used in img2img
 """
@@ -77,9 +77,9 @@ inference_process.start()
 
 
 def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
-    if query.img_uri is not None:
-        logging.info("Downloading {query.img_uri}")
-        img = download_img(query.img_uri, slack_token=get_secret("john-test-slack-bot-token"))
+    if query.img_url is not None:
+        logging.info(f"Downloading {query.img_url}")
+        img = download_img(query.img_url, slack_token=get_secret("john-test-slack-bot-token"))
     else:
         img = None
 
@@ -88,7 +88,7 @@ def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
         seed=query.seed or random.randint(0, 10000),
         guidance_scale=query.guidance_scale,
         num_inference_steps=query.num_inference_steps,
-        img_uri=query.img_uri,
+        img_url=query.img_url,
         init_img=img,
         format=query.format,
         nsfw_allowed=query.nsfw_allowed,
