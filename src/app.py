@@ -42,11 +42,11 @@ Usage examples
 
 Config options
 seed: int
-img_uri: HttpUrl, use this image as starting image
 num_inference_steps: int: [1, 100], default 50
 guidance_scale: float: [1.0, 15.0], default 7.5
+img_uri: HttpUrl, use this image as starting image in img2img
 strength: float: [0.0, 1.0], default 0.8, only used for img2img
-format: Literal["square", "tall", "wide"]
+format: Literal["square", "tall", "wide"] default square, not used in img2img
 """
 
 argparser = argparse.ArgumentParser()
