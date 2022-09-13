@@ -1,8 +1,8 @@
 import contextlib
 from pathlib import Path
-from typing import List
+from typing import Any
+from typing import Dict
 from typing import Optional
-from typing import Union
 
 import numpy as np
 import torch
@@ -18,6 +18,15 @@ from transformers import CLIPTokenizer
 
 # TODO: This will be in next release I think.
 from .contrib import StableDiffusionImg2ImgPipeline  # type: ignore
+from .query import Query
+
+
+class CombinedPipelineInputs(Query):
+    seed: int
+    init_img: Optional[Image.Image]
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 def preprocess_img(image: Image.Image) -> torch.FloatTensor:
@@ -53,7 +62,7 @@ def maybe_bypass_nsfw(pipe, nsfw_allowed: bool):
     pipe.safety_checker = original_safety_checker
 
 
-class BurgermanPipeline:
+class CombinedPipeline:
     def __init__(self, pipeline_path: str):
         # TODO: Just implement the custom pipeline that can optionally take the image as input
         # instead of having these two here?
@@ -103,57 +112,44 @@ class BurgermanPipeline:
         return self.text2img.device
 
     @torch.no_grad()
-    def from_text(
-        self,
-        prompt: Union[str, List[str]],
-        height: Optional[int] = 512,
-        width: Optional[int] = 512,
-        num_inference_steps: Optional[int] = 50,
-        guidance_scale: Optional[float] = 7.5,
-        eta: Optional[float] = 0.0,
-        generator: Optional[torch.Generator] = None,
-        output_type: Optional[str] = "pil",
-        nsfw_allowed: bool = False,
-        **kwargs,
-    ):
-        pipe = self.text2img
-        with maybe_bypass_nsfw(pipe, nsfw_allowed):
-            with torch.autocast(self.text2img.device.type):  # TODO: Can this be a decorator?
-                return pipe(
-                    prompt,
-                    height,
-                    width,
-                    num_inference_steps,
-                    guidance_scale,
-                    eta,
-                    generator,
-                    output_type,
-                    **kwargs,
-                )
+    def __call__(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
+        random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
 
-    @torch.no_grad()
-    def from_text_and_image(
-        self,
-        prompt: Union[str, List[str]],
-        init_image: torch.FloatTensor,
-        strength: float = 0.8,
-        num_inference_steps: Optional[int] = 50,
-        guidance_scale: Optional[float] = 7.5,
-        eta: Optional[float] = 0.0,
-        generator: Optional[torch.Generator] = None,
-        output_type: Optional[str] = "pil",
-        nsfw_allowed: bool = False,
-    ):
-        pipe = self.img2img
-        with maybe_bypass_nsfw(pipe, nsfw_allowed):
-            with torch.autocast(self.img2img.device.type):
-                return pipe(
-                    prompt,
-                    init_image,
-                    strength,
-                    num_inference_steps,
-                    guidance_scale,
-                    eta,
-                    generator,
-                    output_type,
-                )
+        if inputs.init_img is None:
+            pipe = self.text2img
+
+            if inputs.format == "square":
+                height = 512
+                width = 512
+            elif inputs.format == "wide":
+                height = 512
+                width = 768
+            else:
+                height = 768
+                width = 512
+
+            with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
+                with torch.autocast(pipe.device.type):
+                    return pipe(
+                        prompt=inputs.prompt,
+                        height=height,
+                        width=width,
+                        num_inference_steps=inputs.num_inference_steps,
+                        guidance_scale=inputs.guidance_scale,
+                        eta=0.0,
+                        generator=random_generator,
+                    )
+        else:
+            pipe = self.img2img
+            init_img = preprocess_img(inputs.init_img)
+            with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
+                with torch.autocast(pipe.device.type):
+                    return pipe(
+                        prompt=inputs.prompt,
+                        init_image=init_img,
+                        strength=inputs.strength,
+                        num_inference_steps=inputs.num_inference_steps,
+                        guidance_scale=inputs.guidance_scale,
+                        eta=0.0,
+                        generator=random_generator,
+                    )
