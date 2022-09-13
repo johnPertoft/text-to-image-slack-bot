@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from diffusers import AutoencoderKL
 from diffusers import PNDMScheduler
+from diffusers import StableDiffusionImg2ImgPipeline
 from diffusers import StableDiffusionPipeline
 from diffusers import UNet2DConditionModel
 from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
@@ -16,8 +17,6 @@ from transformers import CLIPFeatureExtractor
 from transformers import CLIPTextModel
 from transformers import CLIPTokenizer
 
-# TODO: This will be in next release I think.
-from .contrib import StableDiffusionImg2ImgPipeline  # type: ignore
 from .query import Query
 
 
