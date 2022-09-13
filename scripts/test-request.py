@@ -35,7 +35,9 @@ headers = {"Content-Type": "application/json"}
 if len(sys.argv) > 1:
     query = shlex.join(sys.argv[1:])
 else:
-    query = "a horse in space"
+    # TODO: Links can be formatted with a display text
+    # like <https://google.com|Link text>
+    query = "img_uri=<https://google.com/img.png> | a horse in space"
 
 event_text = f"<@bot-id> {query}"
 
