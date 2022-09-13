@@ -125,7 +125,7 @@ def app_mention(body: Dict[str, Any], say: Say):
         say_in_thread(f"Oops! I couldn't validate those inputs!\n\n{USAGE_STR}")
         return
 
-    # Queue up the inference request.
+    # Acknowledge that the query was parsed correctly and queue up the inference request.
     app.client.reactions_add(
         name="ok",
         channel=say.channel,
@@ -136,7 +136,7 @@ def app_mention(body: Dict[str, Any], say: Say):
             inputs=pipeline_inputs,
             channel=say.channel,
             thread_ts=thread_ts,
-            title="TODO",
+            title=query.prompt,
         )
     )
 
