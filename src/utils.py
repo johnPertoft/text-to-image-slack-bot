@@ -8,9 +8,11 @@ import requests  # type: ignore
 from google.cloud import secretmanager
 from PIL import Image
 
-from .errors import DownloadError
-
 logging.basicConfig(level=logging.INFO)
+
+
+class DownloadError(Exception):
+    pass
 
 
 def get_secret(secret_name: str) -> str:
@@ -35,4 +37,4 @@ def download_img(url: str, slack_token: Optional[str] = None) -> Optional[Image.
     except Exception as e:
         # TODO: Catch only expected errors.
         logging.exception(f"Exception when downloading image: {e}")
-        raise DownloadError()
+        raise DownloadError("I couldn't download that image!")

@@ -15,10 +15,10 @@ from slack_bolt import App
 from slack_bolt import BoltRequest
 from slack_bolt import Say
 
-from .errors import DownloadError
 from .inference import InferenceInputs
 from .inference import InferenceProcess
 from .inference import InferenceTask
+from .utils import DownloadError
 from .utils import download_img
 from .utils import get_secret
 
