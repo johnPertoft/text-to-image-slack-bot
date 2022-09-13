@@ -93,3 +93,11 @@ def test_misspelled_img_uri():
     raw = "<@burgerman> img_url=<https://test.url/img.png?abc=1,2,3> | a red apple"
     with pytest.raises(ValidationError):
         parse_query(raw)
+
+
+def test_text_before_mention():
+    raw = "here is some text followed by <@burgerman> seed=123, img_uri=<https://test.url/img.png?abc=1,2,3> | a red apple"  # noqa: E501
+    q = parse_query(raw)
+    assert q.prompt == "a red apple"
+    assert q.img_uri == "https://test.url/img.png?abc=1,2,3"
+    assert q.seed == 123
