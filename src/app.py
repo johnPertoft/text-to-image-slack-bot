@@ -126,7 +126,11 @@ def app_mention(body: Dict[str, Any], say: Say):
         return
 
     # Queue up the inference request.
-    # say(f"Hey! I'll generate an image for {inference_inputs.prompt}")
+    app.client.reactions_add(
+        name="ok",
+        channel=say.channel,
+        timestamp=thread_ts,
+    )
     task_queue.put(
         InferenceTask(
             inputs=pipeline_inputs,
