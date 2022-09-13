@@ -103,7 +103,7 @@ ENV PATH=$PATH:/home/$USERNAME/.local/bin
 RUN pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
 
 RUN pip install \
-    diffusers \
+    diffusers==0.3.0 \
     ftfy \
     google-cloud-secret-manager \
     jupyter \
