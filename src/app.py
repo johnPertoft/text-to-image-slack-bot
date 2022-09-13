@@ -1,23 +1,23 @@
 import argparse
-import configparser
 import logging
 import multiprocessing as mp
 import os
-import re
+import random
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import Optional
-from typing import Tuple
 
 from pydantic import ValidationError
 from slack_bolt import App
 from slack_bolt import BoltRequest
 from slack_bolt import Say
 
-from .inference import InferenceInputs
 from .inference import InferenceProcess
 from .inference import InferenceTask
+from .pipeline import CombinedPipelineInputs
+from .query import ParseQueryException
+from .query import Query
+from .query import parse_query
 from .utils import DownloadError
 from .utils import download_img
 from .utils import get_secret
@@ -30,8 +30,24 @@ from .utils import get_secret
 # - Handle error at different stages better.
 # - Restart inference process if it dies. Use multiprocessing.Pool with one worker instead?
 # - Maybe utilize middleware to do error handling?
+# - Can we generate usage string from pydantic object?
 
 logging.basicConfig(level=logging.INFO)
+
+USAGE_STR = """
+Usage examples
+@burgerman A horse in space
+@burgerman seed=123, format=wide | A horse in space
+@burgerman img_uri=https://url.to.my/image.png | A horse in space
+
+Config options
+seed: int
+img_uri: HttpUrl, use this image as starting image
+num_inference_steps: int: [1, 100], default 50
+guidance_scale: float: [1.0, 15.0], default 7.5
+strength: float: [0.0, 1.0], default 0.8, only used for img2img
+format: Literal["square", "tall", "wide"]
+"""
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument(
@@ -60,43 +76,23 @@ inference_process = InferenceProcess(task_queue, app.client)
 inference_process.start()
 
 
-def parse_query(query_msg: str) -> Tuple[str, Optional[Dict[str, Any]]]:
-    # Expected query msg format:
-    # guidance_scale = 8.5, format = wide | An old red car, 1950s
-    parts = query_msg.split("|")
-    if len(parts) == 1:
-        prompt_str = parts[0]
-        prompt_str = prompt_str.strip()
-
-        return prompt_str, None
+def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
+    if query.img_uri is not None:
+        logging.info("Downloading {query.img_uri}")
+        img = download_img(query.img_uri, slack_token=get_secret("john-test-slack-bot-token"))
     else:
-        config_str = parts[0]
-        prompt_str = "|".join(parts[1:])  # If "|" present in prompt part, join it back.
-        prompt_str = prompt_str.strip()
+        img = None
 
-        config_str = config_str.replace(" ", "")
-        config_str = config_str.replace(",", "\n")
-        config_str = f"[config]\n{config_str}"
-        config = configparser.ConfigParser()
-        config.read_string(config_str)
-        config_d = dict(config["config"])
-
-        return prompt_str, config_d
-
-
-def prepare_inputs(prompt: str, config: Optional[Dict[str, Any]]) -> InferenceInputs:
-    config = config or dict()
-    logging.info(f"Preparing inputs from config: {config}")
-    if "img_uri" in config:
-        # TODO: Do this with regex.
-        # Slack adds some formatting to urls so we need to remove it.
-        img_uri = config["img_uri"]
-        img_uri = img_uri[1:-1]
-        logging.info(f"Downloading {img_uri}")
-        img = download_img(img_uri, slack_token=get_secret("john-test-slack-bot-token"))
-        config["init_img"] = img
-        del config["img_uri"]
-    return InferenceInputs(prompt=prompt, **config)
+    return CombinedPipelineInputs(
+        prompt=query.prompt,
+        seed=query.seed or random.randint(0, 10000),
+        guidance_scale=query.guidance_scale,
+        num_inference_steps=query.num_inference_steps,
+        img_uri=query.img_uri,
+        init_img=img,
+        format=query.format,
+        nsfw_allowed=query.nsfw_allowed,
+    )
 
 
 @app.middleware
@@ -110,42 +106,33 @@ def skip_retries(request: BoltRequest, next: Callable):
 def app_mention(body: Dict[str, Any], say: Say):
     thread_ts = body["event"]["ts"]
 
-    def say_error(msg: str):
+    def say_in_thread(msg: str):
         say(msg, thread_ts=thread_ts)
 
-    # Get the query from the @mention message.
     raw_event_text = body["event"]["text"]
-    raw_event_query_match = re.search(r"(<@.*?>) (.*)", raw_event_text)
-    if raw_event_query_match is None:
-        say_error("Oops! You have to write a text prompt too!")
-        return
-    query_msg = raw_event_query_match.group(2)
-
-    # Parse prompt and optional configuration.
     try:
-        prompt, config = parse_query(query_msg)
-    except configparser.ParsingError:
-        say_error("Oops! I couldn't parse that configuration.")
+        query = parse_query(raw_event_text)
+    except ParseQueryException as e:
+        say_in_thread(f"Oops! {e}\n\n{USAGE_STR}")
         return
 
-    # Prepare inputs.
     try:
-        inference_inputs = prepare_inputs(prompt, config)
-    except DownloadError:
-        say_error("Oops! I couldn't download that image.")
+        pipeline_inputs = prepare_pipeline_inputs(query)
+    except DownloadError as e:
+        say_in_thread(f"Oops! {e}")
         return
     except ValidationError:
-        say_error("Oops! I couldn't validate those inputs.")
+        say_in_thread(f"Oops! I couldn't validate those inputs!\n\n{USAGE_STR}")
         return
 
     # Queue up the inference request.
-    say(f"Hey! I'll generate an image for {inference_inputs.prompt}")
+    # say(f"Hey! I'll generate an image for {inference_inputs.prompt}")
     task_queue.put(
         InferenceTask(
-            inputs=inference_inputs,
+            inputs=pipeline_inputs,
             channel=say.channel,
             thread_ts=thread_ts,
-            title=query_msg,
+            title="TODO",
         )
     )
 
