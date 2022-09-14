@@ -62,3 +62,18 @@ gcloud secrets add-iam-policy-binding john-test-slack-signing-secret \
 3. Update request url for event subscription: https://api.slack.com/apps/A03U9439A5U/event-subscriptions?
 
 </details>
+
+## Deploying
+TODO:
+- Run this on CI instead
+- Fix docker group id issues to allow to run this from the devcontainer
+- And/or use cloud build
+
+Currently the app is deployed by
+- Building and pushing the new image to gcr
+- Manually deleting the pod to have it automatically restart and use the new image
+   
+```bash
+docker build -t gcr.io/embark-shared/ml2/john-stable-diffusion .
+docker push gcr.io/embark-shared/ml2/john-stable-diffusion
+```
