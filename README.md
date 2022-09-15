@@ -1,19 +1,14 @@
 # Text to Image Slack Bot (Stable-diffusion)
 
+![Lint status](https://github.com/EmbarkStudios/text-to-image-slack-bot/actions/workflows/lint.yaml/badge.svg?branch=main)
+![Test status](https://github.com/EmbarkStudios/text-to-image-slack-bot//actions/workflows/test.yaml/badge.svg?branch=main)
+
 ## Basic information
 |   |   |
 |---|---|
 |Slack application home|https://api.slack.com/apps/A03U9439A5U/|
 |Api endpoint|https://stable-diffusion.ml.embark.net/slack/events|
 |container image|`gcr.io/embark-shared/ml2/john-stable-diffusion`|
-
-## TODO
-- [ ] Figure out why regular python/ubuntu image is not working on ml cluster with gpus.
-- [ ] Have a single Dockerfile, with multiple build targets for dev container and prod.
-- [ ] Automatic build/deploys via CI. Probably with cloud build.
-- [ ] Fix temporary names like john-text- prefixes
-- [ ] Save all generated images in some bucket/bigquery?
-- [ ] Add support for image inpainting?
 
 ## Setup
 <details>
@@ -70,10 +65,5 @@ TODO:
 - And/or use cloud build
 
 Currently the app is deployed by
-- Building and pushing the new image to gcr
+- Building and pushing the new image to gcr, just run `./deploy.sh` in the project root.
 - Manually deleting the pod to have it automatically restart and use the new image
-   
-```bash
-docker build -t gcr.io/embark-shared/ml2/john-stable-diffusion .
-docker push gcr.io/embark-shared/ml2/john-stable-diffusion
-```

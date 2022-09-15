@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from diffusers import AutoencoderKL
 from diffusers import PNDMScheduler
+from diffusers import StableDiffusionImg2ImgPipeline
 from diffusers import StableDiffusionPipeline
 from diffusers import UNet2DConditionModel
 from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
@@ -16,9 +17,13 @@ from transformers import CLIPFeatureExtractor
 from transformers import CLIPTextModel
 from transformers import CLIPTokenizer
 
-# TODO: This will be in next release I think.
-from .contrib import StableDiffusionImg2ImgPipeline  # type: ignore
 from .query import Query
+
+# TODO:
+# - Just reimplement the pipeline logic
+#   - Can have a single instead of separate branches for text2img and img2img
+#   - Easier to skip the nsfw filter etc
+# - Experiment with different schedulers, euler seems popular
 
 
 class CombinedPipelineInputs(Query):
@@ -64,14 +69,6 @@ def maybe_bypass_nsfw(pipe, nsfw_allowed: bool):
 
 class CombinedPipeline:
     def __init__(self, pipeline_path: str):
-        # TODO: Just implement the custom pipeline that can optionally take the image as input
-        # instead of having these two here?
-
-        # TODO: Experiment with different schedulers. See blog post.
-
-        # TODO: The two different pipeline have some different expectations on schedulers.
-        # Read up on this.
-
         pipeline_dir = Path(pipeline_path)
         tokenizer = CLIPTokenizer.from_pretrained(pipeline_dir / "tokenizer")
         text_encoder = CLIPTextModel.from_pretrained(pipeline_dir / "text_encoder")

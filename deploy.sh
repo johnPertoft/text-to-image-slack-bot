@@ -15,7 +15,7 @@ fi
 
 if [ -d "pipelines/sd-pipeline" ]; then
     gcloud auth configure-docker
-    docker build -t gcr.io/embark-shared/ml2/john-stable-diffusion .
+    docker build -t gcr.io/embark-shared/ml2/john-stable-diffusion --target prod .
     docker push gcr.io/embark-shared/ml2/john-stable-diffusion
 else
     echo "Download the model files first"

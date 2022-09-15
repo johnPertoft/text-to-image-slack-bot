@@ -1,7 +1,7 @@
 on: [push]
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +24,4 @@ jobs:
 
       # Then run linting steps inside the devcontainer.
       - run: devcontainer up --workspace-folder . --override-config .devcontainer/devcontainer-ci.json
-      - run: devcontainer exec --workspace-folder . black --check .
-      - run: devcontainer exec --workspace-folder . isort --check --diff .
-      - run: devcontainer exec --workspace-folder . flake8 .
-      - run: devcontainer exec --workspace-folder . mypy .
+      - run: devcontainer exec --workspace-folder . pytest .
