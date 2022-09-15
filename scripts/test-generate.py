@@ -22,13 +22,15 @@ pipe.to("cuda")
 init_img = Image.open("images/childs-drawing.jpg")
 
 inputs = CombinedPipelineInputs(
-    prompt="A small family on a hike in Yosemite national park",
+    # prompt="A small family on a hike in Yosemite national park",
+    # init_img=init_img,
+    prompt="Street level view from a cyberpunk city, concept art, high quality digital art, by michal lisowski, trending on artstation",  # noqa: E501
     num_inference_steps=50,
     seed=1234,
     nsfw_allowed=True,
-    init_img=init_img,
 )
 p = InferenceProcess(None, None)  # type: ignore
-img, has_nsfw = p.generate(pipe, inputs)
+results = p.generate(pipe, inputs)
 
-img.save("output.png")
+for i, result in enumerate(results):
+    result.img.save(f"output-{i}.png")
