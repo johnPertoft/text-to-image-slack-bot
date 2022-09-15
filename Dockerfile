@@ -1,17 +1,26 @@
 FROM docker.io/nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04 AS base
 
+# TODO: Put common app dependencies here?
+# TODO: Any other shared deps?
+
 #############################################
 # Image for prod.
 #############################################
 FROM base AS prod
-COPY requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
 WORKDIR /workspace
 COPY pipelines pipelines
 COPY src src
 ENTRYPOINT ["python", "-m", "src.app"]
 
-# TODO: Have a build target for ci as well?
+#############################################
+# Image for ci.
+#############################################
+FROM base AS ci
+RUN pip install pytest
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
 
 #############################################
 # Image for dev container.
@@ -78,8 +87,7 @@ RUN pipx install black==22.3.0 \
     && pipx install flake8==4.0.1 \
     && pipx install isort==5.10.1 \
     && pipx install mypy==0.942 \
-    && pipx install pre-commit==2.18.1 \
-    && pipx install pytest==7.1.1
+    && pipx install pre-commit==2.18.1
 
 # Create non-root user.
 ARG USERNAME=vscode
@@ -105,6 +113,10 @@ RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/ins
 
 # Append .local/bin to path.
 ENV PATH=$PATH:/home/$USERNAME/.local/bin
+
+# TODO: Probably replace with pyenv
+# Install dev dependencies.
+RUN pip install pytest
 
 # Install app specific python dependencies.
 COPY requirements.txt /tmp/requirements.txt
