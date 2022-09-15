@@ -125,10 +125,17 @@ class CombinedPipeline:
                 height = 768
                 width = 512
 
+            if height * width <= 512 * 512:
+                # TODO: Tune this a bit?
+                # This image size allows us to run with batch size 2.
+                prompt = [inputs.prompt] * 2
+            else:
+                prompt = [inputs.prompt]
+
             with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
                 with torch.autocast(pipe.device.type):
                     return pipe(
-                        prompt=inputs.prompt,
+                        prompt=prompt,
                         height=height,
                         width=width,
                         num_inference_steps=inputs.num_inference_steps,
