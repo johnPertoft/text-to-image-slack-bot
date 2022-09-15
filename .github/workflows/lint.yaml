@@ -4,5 +4,27 @@ jobs:
   lint:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
-      - run: echo "TODO linting"
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+      - uses: urgn/setup-jq-action@v3.0.2
+      - run: npm install -g @devcontainers/cli
+
+      # We need to edit the devcontainer json to
+      # - not use gpus
+      # - not mount any directories
+      # - to use the ci build target
+      # - skip the postattach command
+      - run: |
+          cat .devcontainer/devcontainer.json \
+          | jq 'del(.runArgs)' \
+          | jq 'del(.mounts)' \
+          | jq 'del(.postAttachCommand)' \
+          | jq '.build.target = "ci"' \
+          > .devcontainer/devcontainer-ci.json
+
+      # Then run linting steps inside the devcontainer.
+      - run: devcontainer up --workspace-folder . --override-config .devcontainer/devcontainer-ci.json
+      - run: devcontainer exec --workspace-folder . black --check .
+      - run: devcontainer exec --workspace-folder . isort --check --diff .
+      - run: devcontainer exec --workspace-folder . flake8 .
+      - run: devcontainer exec --workspace-folder . mypy .
