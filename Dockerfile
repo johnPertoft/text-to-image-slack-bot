@@ -1,7 +1,14 @@
 FROM docker.io/nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04 AS base
 
-# TODO: Put common app dependencies here?
-# TODO: Any other shared deps?
+# Install system dependencies.
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    python3 \
+    python3-dev \
+    python3-pip \
+    python3-venv \
+    python-is-python3 \
+    && apt-get clean \
+    && rm --recursive --force /var/lib/apt/lists/*
 
 #############################################
 # Image for prod.
@@ -35,11 +42,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     git \
     locales \
     lsb-release \
-    python3 \
-    python3-dev \
-    python3-pip \
-    python3-venv \
-    python-is-python3 \
     ripgrep \
     sudo \
     tmux \
