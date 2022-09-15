@@ -89,7 +89,7 @@ USER $USERNAME
 
 # Install Oh-my-zsh.
 RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-COPY custom.zsh-theme /home/$USERNAME/.oh-my-zsh/custom/themes/custom.zsh-theme
+COPY .devcontainer/custom.zsh-theme /home/$USERNAME/.oh-my-zsh/custom/themes/custom.zsh-theme
 RUN sed -i -e 's/ZSH_THEME=.*/ZSH_THEME="custom"/g' ~/.zshrc
 RUN sed -i -e 's/plugins.*/plugins=(git direnv)/g' ~/.zshrc
 
@@ -99,15 +99,6 @@ RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/ins
 # Append .local/bin to path.
 ENV PATH=$PATH:/home/$USERNAME/.local/bin
 
-# Install Pytorch dependencies for correct cuda version.
-RUN pip install torch --extra-index-url https://download.pytorch.org/whl/cu113
-
-RUN pip install \
-    diffusers==0.3.0 \
-    ftfy \
-    google-cloud-secret-manager \
-    jupyter \
-    numpy \
-    pydantic \
-    slack_bolt \
-    transformers
+# Install app specific python dependencies.
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt

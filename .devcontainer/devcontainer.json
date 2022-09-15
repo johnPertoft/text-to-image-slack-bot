@@ -2,7 +2,7 @@
 	"name": "text-to-image-slack-bot",
 	"build": {
 		"dockerfile": "Dockerfile",
-		"context": "."
+		"context": ".."
 	},
 	"runArgs": [
         "--gpus=all",
