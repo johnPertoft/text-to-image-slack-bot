@@ -10,14 +10,6 @@
 |Api endpoint|https://stable-diffusion.ml.embark.net/slack/events|
 |container image|`gcr.io/embark-shared/ml2/john-stable-diffusion`|
 
-## TODO
-- [ ] Figure out why regular python/ubuntu image is not working on ml cluster with gpus.
-- [ ] Have a single Dockerfile, with multiple build targets for dev container and prod.
-- [ ] Automatic build/deploys via CI. Probably with cloud build.
-- [ ] Fix temporary names like john-text- prefixes
-- [ ] Save all generated images in some bucket/bigquery?
-- [ ] Add support for image inpainting?
-
 ## Setup
 <details>
 <summary>Click to expand</summary>
