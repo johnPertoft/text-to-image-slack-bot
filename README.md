@@ -1,5 +1,8 @@
 # Text to Image Slack Bot (Stable-diffusion)
 
+![Lint status](https://github.com/EmbarkStudios/text-to-image-slack-bot/actions/workflows/lint.yaml/badge.svg?branch=main)
+![Test status](https://github.com/EmbarkStudios/text-to-image-slack-bot//actions/workflows/test.yaml/badge.svg?branch=main)
+
 ## Basic information
 |   |   |
 |---|---|
