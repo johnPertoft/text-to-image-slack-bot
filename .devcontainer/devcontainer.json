@@ -1,7 +1,8 @@
 {
 	"name": "text-to-image-slack-bot",
 	"build": {
-		"dockerfile": "Dockerfile",
+		"dockerfile": "../Dockerfile",
+		"target": "dev",
 		"context": ".."
 	},
 	"runArgs": [
