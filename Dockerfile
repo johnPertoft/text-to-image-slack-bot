@@ -10,12 +10,14 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     && apt-get clean \
     && rm --recursive --force /var/lib/apt/lists/*
 
+# Install python app dependencies.
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
+
 #############################################
 # Image for prod.
 #############################################
 FROM base AS prod
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
 WORKDIR /workspace
 COPY pipelines pipelines
 COPY src src
@@ -25,16 +27,27 @@ ENTRYPOINT ["python", "-m", "src.app"]
 # Image for ci.
 #############################################
 FROM base AS ci
+
+# Install python dev dependencies in separate environments via
+# pipx to avoid dependency conflicts.
+ENV PIPX_HOME=/usr/local/py-utils \
+    PIPX_BIN_DIR=/usr/local/py-utils/bin
+ENV PATH=$PATH:$PIPX_BIN_DIR
+RUN pip install pipx && pipx ensurepath
+RUN pipx install black==22.3.0 \
+    && pipx install dvc[gs]==2.10.1 \
+    && pipx install flake8==4.0.1 \
+    && pipx install isort==5.10.1 \
+    && pipx install mypy==0.942 \
+    && pipx install pre-commit==2.18.1
 RUN pip install pytest
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
 
 #############################################
 # Image for dev container.
 #############################################
-FROM base AS dev
+FROM ci AS dev
 
-# Install system dependencies.
+# Install dev specific system dependencies.
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     build-essential \
     curl \
@@ -77,20 +90,6 @@ RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
 
 # TODO: Install docker?
 
-# TODO: Update dependencies.
-# Install python dev dependencies in separate environments via
-# pipx to avoid dependency conflicts.
-ENV PIPX_HOME=/usr/local/py-utils \
-    PIPX_BIN_DIR=/usr/local/py-utils/bin
-ENV PATH=$PATH:$PIPX_BIN_DIR
-RUN pip install pipx && pipx ensurepath
-RUN pipx install black==22.3.0 \
-    && pipx install dvc[gs]==2.10.1 \
-    && pipx install flake8==4.0.1 \
-    && pipx install isort==5.10.1 \
-    && pipx install mypy==0.942 \
-    && pipx install pre-commit==2.18.1
-
 # Create non-root user.
 ARG USERNAME=vscode
 ARG USER_UID=1000
@@ -115,11 +114,3 @@ RUN git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf && ~/.fzf/ins
 
 # Append .local/bin to path.
 ENV PATH=$PATH:/home/$USERNAME/.local/bin
-
-# TODO: Probably replace with pyenv
-# Install dev dependencies.
-RUN pip install pytest
-
-# Install app specific python dependencies.
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
