@@ -70,10 +70,5 @@ TODO:
 - And/or use cloud build
 
 Currently the app is deployed by
-- Building and pushing the new image to gcr
+- Building and pushing the new image to gcr, just run `./deploy.sh` in the project root.
 - Manually deleting the pod to have it automatically restart and use the new image
-   
-```bash
-docker build -t gcr.io/embark-shared/ml2/john-stable-diffusion .
-docker push gcr.io/embark-shared/ml2/john-stable-diffusion
-```
