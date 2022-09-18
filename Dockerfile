@@ -88,7 +88,16 @@ RUN curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
     && apt-get clean \
     && rm --recursive --force /var/lib/apt/lists/*
 
-# TODO: Install docker?
+# Install docker.
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+    | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+    | tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin \
+    && apt-get clean \
+    && rm --recursive --force /var/lib/apt/lists/*
 
 # Create non-root user.
 ARG USERNAME=vscode
@@ -97,6 +106,7 @@ ARG USER_GID=$USER_UID
 RUN \
     groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID --create-home --shell /bin/zsh $USERNAME \
+    && usermod -aG docker $USERNAME \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
