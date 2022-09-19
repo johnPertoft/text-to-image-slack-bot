@@ -13,8 +13,10 @@
         "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind,consistency=cached",
 		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
     ],
-	"postCreateCommand": "bash .devcontainer/post-create.sh",
-	"postAttachCommand": "touch .envrc && direnv allow && pre-commit install",
+	"containerEnv": {
+		"CI": "${localEnv:CI:false}"
+	},
+	"postCreateCommand": ".devcontainer/post-create.sh",
 	"customizations": {
 		"vscode": {
 			"settings": {
