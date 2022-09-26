@@ -1,12 +1,5 @@
 #!/bin/bash
-set -e
-set -u
-set -o pipefail
-
-# TODO: temporary script for deploying image.
-# - Should live on CI instead with proper tagging etc.
-# - Maybe use cloud build instead?
-# - Automatically download the pipeline files?
+set -eou pipefail
 
 if [[ $(git symbolic-ref --short -q HEAD) != "main" ]]; then
     echo "You should be on the main branch"

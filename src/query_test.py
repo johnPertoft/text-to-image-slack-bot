@@ -4,15 +4,6 @@ from pydantic import ValidationError
 from .query import ParseQueryException
 from .query import parse_query
 
-# TODO:
-# - Need to make the raw strings slack formatted
-# - Handle additional spaces etc
-# - Test for case insensitivity etc
-# - Pytest can't access our dependencies
-#   Maybe use pyenv or something instead?
-# - Create some text fixture for creating the slack formatting
-# - Add assertions on default values.
-
 
 def test_just_prompt_str():
     raw = "<@burgerman> a red apple"
