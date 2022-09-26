@@ -34,7 +34,7 @@ class InferenceProcess(mp.Process):
         self.slack_client = slack_client
 
     def load_model(self) -> CombinedPipeline:
-        pipe = CombinedPipeline("pipelines/sd-pipeline")
+        pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
         pipe.to("cuda")
         return pipe
 
