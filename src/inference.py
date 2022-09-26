@@ -6,13 +6,11 @@ import slack_sdk
 from PIL import Image
 from pydantic import BaseModel
 
+from .constants import SLACK_APP_NAME
 from .pipeline import CombinedPipeline
 from .pipeline import CombinedPipelineInputs
 
 logging.basicConfig(level=logging.INFO)
-
-# TODO:
-# - Fix missing type hints in this file.
 
 
 class InferenceTask(BaseModel):
@@ -47,7 +45,7 @@ class InferenceProcess(mp.Process):
             for img, nsfw in zip(results["sample"], results["nsfw_content_detected"])
         ]
 
-    def upload_image(self, img: Image.Image, channel: str, title: str):
+    def upload_image(self, img: Image.Image, channel: str, title: str) -> None:
         buffer = io.BytesIO()
         img.save(buffer, format="PNG")
         img_bytes = buffer.getvalue()
@@ -57,7 +55,7 @@ class InferenceProcess(mp.Process):
             content=img_bytes,
         )
 
-    def run(self):
+    def run(self) -> None:
         # Need to make sure to load the model in this forked process rather than
         # in the main process because otherwise CUDA complains.
         pipe = self.load_model()
@@ -86,7 +84,7 @@ class InferenceProcess(mp.Process):
                 config = task.inputs.dict()
                 prompt = config.pop("prompt")
                 config_str = ", ".join(f"{k}={v}" for k, v in config.items() if v is not None)
-                command_to_reproduce = f"Use this command to reproduce the same result:\n`@burgerman {config_str} | {prompt}`"  # noqa: E501
+                command_to_reproduce = f"Use this command to reproduce the same result:\n`@{SLACK_APP_NAME} {config_str} | {prompt}`"  # noqa: E501
                 self.slack_client.chat_postMessage(
                     text=command_to_reproduce,
                     channel=task.channel,

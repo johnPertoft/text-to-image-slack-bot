@@ -12,6 +12,9 @@ from slack_bolt import App
 from slack_bolt import BoltRequest
 from slack_bolt import Say
 
+from .constants import GCP_SLACK_BOT_TOKEN_SECRET_NAME
+from .constants import GCP_SLACK_SIGNING_SECRET_NAME
+from .constants import SLACK_APP_NAME
 from .inference import InferenceProcess
 from .inference import InferenceTask
 from .pipeline import CombinedPipelineInputs
@@ -22,23 +25,13 @@ from .utils import DownloadError
 from .utils import download_img
 from .utils import get_secret
 
-# TODO:
-# - Improve help strings when something goes wrong.
-# - If mention is "some text @burgerman some other text", are we
-#   handling it correctly?
-# - Convert to AsyncApp, since we're doing some downloading of images potentially.
-# - Handle error at different stages better.
-# - Restart inference process if it dies. Use multiprocessing.Pool with one worker instead?
-# - Maybe utilize middleware to do error handling?
-# - Can we generate usage string from pydantic object?
-
 logging.basicConfig(level=logging.INFO)
 
-USAGE_STR = """
+USAGE_STR = f"""
 Usage examples
-@burgerman A horse in space
-@burgerman seed=123, format=wide | A horse in space
-@burgerman img_url=https://url.to.my/image.png | A horse in space
+@{SLACK_APP_NAME} A horse in space
+@{SLACK_APP_NAME} seed=123, format=wide | A horse in space
+@{SLACK_APP_NAME} img_url=https://url.to.my/image.png | A horse in space
 
 Config options
 seed: int
@@ -65,8 +58,8 @@ if args.skip_request_verification:
 
 # Create the Slack app.
 app = App(
-    token=get_secret("john-test-slack-bot-token"),
-    signing_secret=get_secret("john-test-slack-signing-secret"),
+    token=get_secret(GCP_SLACK_BOT_TOKEN_SECRET_NAME),
+    signing_secret=get_secret(GCP_SLACK_SIGNING_SECRET_NAME),
     request_verification_enabled=not args.skip_request_verification,
 )
 
@@ -79,7 +72,7 @@ inference_process.start()
 def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
     if query.img_url is not None:
         logging.info(f"Downloading {query.img_url}")
-        img = download_img(query.img_url, slack_token=get_secret("john-test-slack-bot-token"))
+        img = download_img(query.img_url, slack_token=get_secret(GCP_SLACK_BOT_TOKEN_SECRET_NAME))
     else:
         img = None
 
