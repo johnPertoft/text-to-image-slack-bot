@@ -16,7 +16,7 @@ from src.inference import InferenceProcess  # noqa: E402
 from src.pipeline import CombinedPipeline  # noqa: E402
 from src.pipeline import CombinedPipelineInputs  # noqa: E402
 
-pipe = CombinedPipeline("pipelines/sd-pipeline")
+pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
 pipe.to("cuda")
 
 init_img = Image.open("images/childs-drawing.jpg")

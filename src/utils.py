@@ -35,6 +35,5 @@ def download_img(url: str, slack_token: Optional[str] = None) -> Optional[Image.
         img = Image.open(img_bytes).convert("RGB")
         return img
     except Exception as e:
-        # TODO: Catch only expected errors.
         logging.exception(f"Exception when downloading image: {e}")
         raise DownloadError("I couldn't download that image!")

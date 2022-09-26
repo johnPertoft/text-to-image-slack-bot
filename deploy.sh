@@ -1,19 +1,12 @@
 #!/bin/bash
-set -e
-set -u
-set -o pipefail
-
-# TODO: temporary script for deploying image.
-# - Should live on CI instead with proper tagging etc.
-# - Maybe use cloud build instead?
-# - Automatically download the pipeline files?
+set -eou pipefail
 
 if [[ $(git symbolic-ref --short -q HEAD) != "main" ]]; then
     echo "You should be on the main branch"
     exit 1
 fi
 
-if [ -d "pipelines/sd-pipeline" ]; then
+if [ -d "pipelines/stable-diffusion-v1-4" ]; then
     gcloud auth configure-docker
     docker build -t gcr.io/embark-shared/ml2/john-stable-diffusion --target prod .
     docker push gcr.io/embark-shared/ml2/john-stable-diffusion

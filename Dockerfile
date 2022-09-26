@@ -64,7 +64,6 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     && apt-get clean \
     && rm --recursive --force /var/lib/apt/lists/*
 
-# TODO: Needed?
 # Setup locale.
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen
 
