@@ -59,5 +59,5 @@ gcloud secrets add-iam-policy-binding john-test-slack-signing-secret \
 
 ## Deploying
 Currently the app is deployed by
-- Building and pushing the new image to gcr, just run `./deploy.sh` in the project root.
+- Building and pushing the new image to gcr, just run `./deploy.sh` in the project root
 - Manually deleting the pod to have it automatically restart and use the new image
