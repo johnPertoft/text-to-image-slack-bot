@@ -3,11 +3,7 @@
 ![Lint status](https://github.com/johnPertoft/text-to-image-slack-bot/actions/workflows/lint.yaml/badge.svg?branch=main)
 ![Test status](https://github.com/johnPertoft/text-to-image-slack-bot//actions/workflows/test.yaml/badge.svg?branch=main)
 
-## Basic information
-|   |   |
-|---|---|
-|Slack application home|https://api.slack.com/apps/A03U9439A5U/|
-|container image|`gcr.io/embark-shared/ml2/john-stable-diffusion`|
+**Slack application home**: https://api.slack.com/apps/A03U9439A5U/
 
 ## Setup
 <details>
