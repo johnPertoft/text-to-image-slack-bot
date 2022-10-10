@@ -1,4 +1,4 @@
-diffusers==0.3.0
+diffusers==0.4.1
 ftfy==6.1.1
 google-cloud-secret-manager==2.12.4
 numpy==1.23.3
