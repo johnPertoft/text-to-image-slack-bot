@@ -6,12 +6,6 @@ from typing import Optional
 
 import numpy as np
 import torch
-from diffusers import AutoencoderKL
-from diffusers import PNDMScheduler
-from diffusers import StableDiffusionImg2ImgPipeline
-from diffusers import StableDiffusionPipeline
-from diffusers import UNet2DConditionModel
-from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
 from PIL import Image
 from transformers import CLIPFeatureExtractor
 from transformers import CLIPTextModel
@@ -69,6 +63,13 @@ def maybe_bypass_nsfw(pipe, nsfw_allowed: bool):
 
 class CombinedPipeline:
     def __init__(self, pipeline_path: str):
+        from diffusers import AutoencoderKL
+        from diffusers import PNDMScheduler
+        from diffusers import StableDiffusionImg2ImgPipeline
+        from diffusers import StableDiffusionPipeline
+        from diffusers import UNet2DConditionModel
+        from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
+
         pipeline_dir = Path(pipeline_path)
         tokenizer = CLIPTokenizer.from_pretrained(pipeline_dir / "tokenizer")
         text_encoder = CLIPTextModel.from_pretrained(pipeline_dir / "text_encoder")
