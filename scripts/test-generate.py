@@ -14,21 +14,30 @@ from src.inference import InferenceProcess  # noqa: E402
 from src.pipeline import CombinedPipeline  # noqa: E402
 from src.pipeline import CombinedPipelineInputs  # noqa: E402
 
-pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
-pipe.to("cuda")
-
-init_img = Image.open("images/childs-drawing.jpg")
-
-inputs = CombinedPipelineInputs(
-    # prompt="A small family on a hike in Yosemite national park",
-    # init_img=init_img,
+text2img_inputs = CombinedPipelineInputs(
     prompt="Street level view from a cyberpunk city, concept art, high quality digital art, by michal lisowski, trending on artstation",  # noqa: E501
     num_inference_steps=50,
     seed=1234,
     nsfw_allowed=True,
 )
-p = InferenceProcess(None, None)  # type: ignore
-results = p.generate(pipe, inputs)
 
-for i, result in enumerate(results):
-    result.img.save(f"output-{i}.png")
+init_img = Image.open("images/childs-drawing.jpg")
+img2img_inputs = CombinedPipelineInputs(
+    prompt="A family on a hike in Yosemite national park, concept art, high quality digital art, by micahl lisowski, trending on artstation",  # noqa: E501
+    init_img=init_img,
+    num_inference_steps=50,
+    seed=1234,
+    nsfw_allowed=True,
+)
+
+pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
+pipe.to("cuda")
+p = InferenceProcess(None, None)  # type: ignore
+
+text2img_results = p.generate(pipe, text2img_inputs)
+for i, result in enumerate(text2img_results):
+    result.img.save(f"output-text2img-{i}.png")
+
+img2img_results = p.generate(pipe, img2img_inputs)
+for i, result in enumerate(img2img_results):
+    result.img.save(f"output-img2img-{i}.png")
