@@ -63,6 +63,9 @@ def maybe_bypass_nsfw(pipe, nsfw_allowed: bool):
 
 class CombinedPipeline:
     def __init__(self, pipeline_path: str):
+        # It seems like diffusers 0.4^ loads cuda on import which breaks the setup here
+        # with cuda being loaded in a separate process from the main app process.
+        # So instead we delay the import and have it here instead.
         from diffusers import AutoencoderKL
         from diffusers import PNDMScheduler
         from diffusers import StableDiffusionImg2ImgPipeline
