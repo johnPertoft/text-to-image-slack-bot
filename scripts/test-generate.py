@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """
 This script runs just the code to generate an image.
 """

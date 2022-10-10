@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """
 This script simulates a post request as sent from Slack on app_mention events.
 """
