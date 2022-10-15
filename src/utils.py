@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 from urllib.parse import urlparse
 
-import requests  # type: ignore
+import aiohttp
 from google.cloud import secretmanager
 from PIL import Image
 
@@ -15,6 +15,7 @@ class DownloadError(Exception):
     pass
 
 
+@functools.lru_cache()
 def get_secret(secret_name: str) -> str:
     client = secretmanager.SecretManagerServiceClient()
     full_secret_name = f"projects/embark-nlp/secrets/{secret_name}/versions/latest"
@@ -23,17 +24,19 @@ def get_secret(secret_name: str) -> str:
 
 
 @functools.lru_cache(maxsize=512)
-def download_img(url: str, slack_token: Optional[str] = None) -> Optional[Image.Image]:
+async def download_img(url: str, slack_token: Optional[str] = None) -> Optional[Image.Image]:
     p = urlparse(url)
     if p.netloc == "files.slack.com" and slack_token is not None:
         headers = {"Authorization": "Bearer " + slack_token}
     else:
         headers = None
+
     try:
-        response = requests.get(url, timeout=5.0, headers=headers)
-        img_bytes = io.BytesIO(response.content)
-        img = Image.open(img_bytes).convert("RGB")
-        return img
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, timeout=5.0) as response:
+                img_bytes = io.BytesIO(await response.content)
+                img = Image.open(img_bytes).convert("RGB")
+                return img
     except Exception as e:
         logging.exception(f"Exception when downloading image: {e}")
         raise DownloadError("I couldn't download that image!")
