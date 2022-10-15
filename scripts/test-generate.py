@@ -10,9 +10,9 @@ sys.path.append(str(project_root))
 
 from PIL import Image  # noqa: E402
 
-from src.inference import InferenceProcess  # noqa: E402
 from src.pipeline import CombinedPipeline  # noqa: E402
 from src.pipeline import CombinedPipelineInputs  # noqa: E402
+from src.worker import WorkerProcess  # noqa: E402
 
 text2img_inputs = CombinedPipelineInputs(
     prompt="Street level view from a cyberpunk city, concept art, high quality digital art, by michal lisowski, trending on artstation",  # noqa: E501
@@ -32,7 +32,7 @@ img2img_inputs = CombinedPipelineInputs(
 
 pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
 pipe.to("cuda")
-p = InferenceProcess(None, None)  # type: ignore
+p = WorkerProcess(None, None)  # type: ignore
 
 text2img_results = p.generate(pipe, text2img_inputs)
 for i, result in enumerate(text2img_results):
