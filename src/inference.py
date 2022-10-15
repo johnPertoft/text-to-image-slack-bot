@@ -117,4 +117,7 @@ class InferenceProcess(mp.Process):
         logging.info("Inference ready to handle requests")
         while True:
             task = self.task_queue.get()
-            self.handle_request(task, pipe)
+            try:
+                self.handle_request(task, pipe)
+            except Exception as e:
+                logging.warning(f"Caught unhandled exception: {e}")
