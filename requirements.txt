@@ -1,5 +1,5 @@
 aiohttp==3.8.3
-diffusers==0.4.1
+diffusers==0.5.1
 ftfy==6.1.1
 google-cloud-secret-manager==2.12.4
 numpy==1.23.3
