@@ -55,6 +55,60 @@ class InferenceProcess(mp.Process):
             content=img_bytes,
         )
 
+    def handle_request(self, task: InferenceTask, pipe: CombinedPipeline) -> None:
+        logging.info(f"Handling request: {task}")
+
+        results = self.generate(pipe, task.inputs)
+
+        # Write a reply if all results were nsfw and early exit.
+        if all(result.nsfw for result in results):
+            nsfw_msg = "\n".join(
+                [
+                    "Oops! All results were NSFW!",
+                    f"You can retry with @`{SLACK_APP_NAME} nsfw_allowed=True | {task.inputs.prompt}`",  # noqa: E501
+                ]
+            )
+            self.slack_client.chat_postMessage(
+                text=nsfw_msg,
+                channel=task.channel,
+                thread_ts=task.thread_ts,
+            )
+            return
+
+        # Upload images to Slack.
+        results = [result for result in results if not result.nsfw]
+        failed_uploads = 0
+        for result in results:
+            try:
+                self.upload_image(img=result.img, channel=task.channel, title=task.inputs.prompt)
+            except slack_sdk.errors.SlackApiError:
+                failed_uploads += 1
+
+        # Write a reply if all images failed to upload and early exit.
+        if failed_uploads == len(results):
+            self.slack_client.chat_postMessage(
+                text="I couldn't upload the images for some reason",
+                channel=task.channel,
+                thread_ts=task.thread_ts,
+            )
+            return
+
+        # Write a reply in original message with instructions for how to reproduce results.
+        config = task.inputs.dict()
+        prompt = config.pop("prompt")
+        config_str = ", ".join(f"{k}={v}" for k, v in config.items() if v is not None)
+        command_to_reproduce = "\n".join(
+            [
+                "Use this command to reproduce the same result:",
+                f"`@{SLACK_APP_NAME} {config_str} | {prompt}`",
+            ]
+        )
+        self.slack_client.chat_postMessage(
+            text=command_to_reproduce,
+            channel=task.channel,
+            thread_ts=task.thread_ts,
+        )
+
     def run(self) -> None:
         # Need to make sure to load the model in this forked process rather than
         # in the main process because otherwise CUDA complains.
@@ -63,30 +117,7 @@ class InferenceProcess(mp.Process):
         logging.info("Inference ready to handle requests")
         while True:
             task = self.task_queue.get()
-            logging.info(f"Handling request: {task}")
-
-            results = self.generate(pipe, task.inputs)
-
-            if all(result.nsfw for result in results):
-                self.slack_client.chat_postMessage(
-                    text="Oops! I generated something NSFW! Total accident ( ͡° ͜ʖ ͡°)",
-                    channel=task.channel,
-                    thread_ts=task.thread_ts,
-                )
-            else:
-                results = [result for result in results if not result.nsfw]
-                for result in results:
-                    self.upload_image(
-                        img=result.img, channel=task.channel, title=task.inputs.prompt
-                    )
-
-                # Write a reply in original message with instructions for how to reproduce results.
-                config = task.inputs.dict()
-                prompt = config.pop("prompt")
-                config_str = ", ".join(f"{k}={v}" for k, v in config.items() if v is not None)
-                command_to_reproduce = f"Use this command to reproduce the same result:\n`@{SLACK_APP_NAME} {config_str} | {prompt}`"  # noqa: E501
-                self.slack_client.chat_postMessage(
-                    text=command_to_reproduce,
-                    channel=task.channel,
-                    thread_ts=task.thread_ts,
-                )
+            try:
+                self.handle_request(task, pipe)
+            except Exception as e:
+                logging.warning(f"Caught unhandled exception: {e}")
