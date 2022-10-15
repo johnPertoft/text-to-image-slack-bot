@@ -2,8 +2,8 @@ import asyncio
 import io
 import logging
 import multiprocessing as mp
+from typing import List
 
-import slack_sdk
 from PIL import Image
 from pydantic import BaseModel
 from slack_sdk.web.async_client import AsyncWebClient
@@ -73,23 +73,8 @@ class WorkerProcess(mp.Process):
 
         # Upload images to Slack.
         results = [result for result in results if not result.nsfw]
-        failed_uploads = 0
-        for result in results:
-            try:
-                await self.upload_image(
-                    img=result.img, channel=task.channel, title=task.inputs.prompt
-                )
-            except slack_sdk.errors.SlackApiError as e:
-                raise e
-                failed_uploads += 1
-
-        # Write a reply if all images failed to upload and early exit.
-        if failed_uploads == len(results):
-            return await self.slack_client.chat_postMessage(
-                text="I couldn't upload the images for some reason",
-                channel=task.channel,
-                thread_ts=task.thread_ts,
-            )
+        images = [r.img for r in results]
+        await self.upload_images(images, channel=task.channel, title=task.inputs.prompt)
 
         # Write a reply in original message with instructions for how to reproduce results.
         config = task.inputs.dict()
@@ -107,29 +92,19 @@ class WorkerProcess(mp.Process):
             thread_ts=task.thread_ts,
         )
 
-    async def upload_image(self, img: Image.Image, channel: str, title: str) -> None:
-        buffer = io.BytesIO()
-        img.save(buffer, format="PNG")
-        img_bytes = buffer.getvalue()
+    async def upload_images(self, imgs: List[Image.Image], channel: str, title: str) -> None:
+        img_uploads = []
+        for i, img in enumerate(imgs):
+            buffer = io.BytesIO()
+            img.save(buffer, format="PNG")
+            img_bytes = buffer.getvalue()
+            img_uploads.append({"title": title, "content": img_bytes, "filename": f"img-{i}.png"})
 
-        # TODO: Hmm, the sync client works but not the async one
-        # Try with the regular non async client here
-        import os
-
-        sync_client = slack_sdk.WebClient(os.environ["SLACK_BOT_TOKEN"])
-        sync_client.files_upload(
-            channels=channel,
-            title=title,
-            content=img_bytes,
+        # TODO: Maybe write the string for how to reproduce to this message instead.
+        return await self.slack_client.files_upload_v2(
+            channel=channel,
+            file_uploads=img_uploads,
         )
-
-        # TODO: This yields
-        # "The server responded with: {'ok': False, 'error': 'invalid_arg_name'}""
-        # return await self.slack_client.files_upload(
-        #     channels=channel,
-        #     title=title,
-        #     content=img_bytes,
-        # )
 
     def generate(self, pipe: CombinedPipeline, inputs: CombinedPipelineInputs) -> Image.Image:
         results = pipe(inputs)
