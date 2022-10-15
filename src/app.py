@@ -15,8 +15,6 @@ from slack_bolt.async_app import AsyncApp
 from .constants import GCP_SLACK_BOT_TOKEN_SECRET_NAME
 from .constants import GCP_SLACK_SIGNING_SECRET_NAME
 from .constants import SLACK_APP_NAME
-from .inference import InferenceProcess
-from .inference import InferenceTask
 from .pipeline import CombinedPipelineInputs
 from .query import ParseQueryException
 from .query import Query
@@ -24,6 +22,8 @@ from .query import parse_query
 from .utils import DownloadError
 from .utils import download_img
 from .utils import get_secret
+from .worker import InferenceTask
+from .worker import WorkerProcess
 
 logging.basicConfig(level=logging.INFO)
 
@@ -63,10 +63,10 @@ app = AsyncApp(
     request_verification_enabled=not args.skip_request_verification,
 )
 
-# Create and start the inference process.
+# Create and start the inference worker process.
 task_queue: mp.Queue = mp.Queue()
-inference_process = InferenceProcess(task_queue, app.client)
-inference_process.start()
+worker_process = WorkerProcess(task_queue, app.client)
+worker_process.start()
 
 
 async def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
