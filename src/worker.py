@@ -100,7 +100,6 @@ class WorkerProcess(mp.Process):
             img_bytes = buffer.getvalue()
             img_uploads.append({"title": title, "content": img_bytes, "filename": f"img-{i}.png"})
 
-        # TODO: Maybe write the string for how to reproduce to this message instead.
         return await self.slack_client.files_upload_v2(
             channel=channel,
             file_uploads=img_uploads,
