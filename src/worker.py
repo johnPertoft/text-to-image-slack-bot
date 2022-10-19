@@ -62,7 +62,7 @@ class WorkerProcess(mp.Process):
             nsfw_msg = "\n".join(
                 [
                     "Oops! All results were NSFW!",
-                    f"You can retry with @`{SLACK_APP_NAME} nsfw_allowed=True | {task.inputs.prompt}`",  # noqa: E501
+                    f"You can retry with `@{SLACK_APP_NAME} nsfw_allowed=True | {task.inputs.prompt}`",  # noqa: E501
                 ]
             )
             return await self.slack_client.chat_postMessage(
