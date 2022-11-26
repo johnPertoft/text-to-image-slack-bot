@@ -1,6 +1,7 @@
-on:
-  push:
-    branches: main
+# on:
+#   push:
+#     branches: main
+on: [push]
 
 # TODO: Make sure this depends on linting/test stages.
 jobs:
