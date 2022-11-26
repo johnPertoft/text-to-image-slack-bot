@@ -42,8 +42,6 @@ class WorkerProcess(mp.Process):
         pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
         pipe.to("cuda")
 
-        # TODO: Should handle the requests asyncronously here otherwise
-        # there's nothing to gain.
         logging.info("Inference ready to handle requests")
         while True:
             task = self.task_queue.get()
@@ -109,5 +107,5 @@ class WorkerProcess(mp.Process):
         results = pipe(inputs)
         return [
             InferenceResult(img=img, nsfw=nsfw)
-            for img, nsfw in zip(results["sample"], results["nsfw_content_detected"])
+            for img, nsfw in zip(results["images"], results["nsfw_content_detected"])
         ]
