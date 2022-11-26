@@ -19,6 +19,7 @@ class Query(BaseModel):
     strength: float = Field(default=0.8, ge=0.0, le=1.0)
     format: Literal["square", "tall", "wide"] = "square"
     nsfw_allowed: bool = False
+    tshirt_mode: bool = False
 
     class Config:
         extra = Extra.forbid

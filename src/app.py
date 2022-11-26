@@ -87,6 +87,7 @@ async def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
         init_img=img,
         format=query.format,
         nsfw_allowed=query.nsfw_allowed,
+        tshirt_mode=query.tshirt_mode,
     )
 
 

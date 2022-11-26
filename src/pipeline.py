@@ -18,6 +18,9 @@ from .query import Query
 #   - Can have a single instead of separate branches for text2img and img2img
 #   - Easier to skip the nsfw filter etc
 # - Experiment with different schedulers, euler seems popular
+# - There is a finetuned inpainting model too
+#   https://github.com/runwayml/stable-diffusion#inpainting-with-stable-diffusion
+# - Can we allow users to upload an image in slack to trigger img2img instead?
 
 
 class CombinedPipelineInputs(Query):
@@ -69,6 +72,7 @@ class CombinedPipeline:
         from diffusers import AutoencoderKL
         from diffusers import PNDMScheduler
         from diffusers import StableDiffusionImg2ImgPipeline
+        from diffusers import StableDiffusionInpaintPipelineLegacy
         from diffusers import StableDiffusionPipeline
         from diffusers import UNet2DConditionModel
         from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
@@ -104,6 +108,20 @@ class CombinedPipeline:
             feature_extractor=feature_extractor,
         )
 
+        # TODO: The non legacy one requires different weights/config for unet.
+        self.inpainting = StableDiffusionInpaintPipelineLegacy(
+            tokenizer=tokenizer,
+            text_encoder=text_encoder,
+            vae=vae,
+            unet=unet,
+            scheduler=scheduler,
+            safety_checker=safety_checker,
+            feature_extractor=feature_extractor,
+        )
+
+        self.tshirt_img = Image.open("images/tshirt.jpeg").convert("RGB")
+        self.tshirt_mask = Image.open("images/tshirt-mask.jpeg").convert("RGB")
+
     def to(self, device: str) -> None:
         self.text2img = self.text2img.to(device)
         self.img2img = self.img2img.to(device)
@@ -114,50 +132,73 @@ class CombinedPipeline:
 
     @torch.no_grad()
     def __call__(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
-        random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
-
-        if inputs.init_img is None:
-            pipe = self.text2img
-
-            if inputs.format == "square":
-                height = 512
-                width = 512
-            elif inputs.format == "wide":
-                height = 512
-                width = 768
-            else:
-                height = 768
-                width = 512
-
-            if height * width <= 512 * 512:
-                # TODO: Tune this a bit?
-                # This image size allows us to run with batch size 2.
-                prompt = [inputs.prompt] * 2
-            else:
-                prompt = [inputs.prompt]
-
-            with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
-                with torch.autocast(pipe.device.type):
-                    return pipe(
-                        prompt=prompt,
-                        height=height,
-                        width=width,
-                        num_inference_steps=inputs.num_inference_steps,
-                        guidance_scale=inputs.guidance_scale,
-                        eta=0.0,
-                        generator=random_generator,
-                    )
+        if inputs.tshirt_mode:
+            return self.call_tshirt(inputs)
+        elif inputs.init_img is not None:
+            return self.call_img2img(inputs)
         else:
-            pipe = self.img2img
-            init_img = preprocess_img(inputs.init_img)
-            with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
-                with torch.autocast(pipe.device.type):
-                    return pipe(
-                        prompt=inputs.prompt,
-                        init_image=init_img,
-                        strength=inputs.strength,
-                        num_inference_steps=inputs.num_inference_steps,
-                        guidance_scale=inputs.guidance_scale,
-                        eta=0.0,
-                        generator=random_generator,
-                    )
+            return self.call_txt2img(inputs)
+
+    def call_txt2img(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
+        random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
+        pipe = self.text2img
+
+        if inputs.format == "square":
+            height = 512
+            width = 512
+        elif inputs.format == "wide":
+            height = 512
+            width = 768
+        else:
+            height = 768
+            width = 512
+
+        if height * width <= 512 * 512:
+            # This image size allows us to run with batch size 2.
+            prompt = [inputs.prompt] * 2
+        else:
+            prompt = [inputs.prompt]
+
+        with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
+            with torch.autocast(pipe.device.type):
+                return pipe(
+                    prompt=prompt,
+                    height=height,
+                    width=width,
+                    num_inference_steps=inputs.num_inference_steps,
+                    guidance_scale=inputs.guidance_scale,
+                    eta=0.0,
+                    generator=random_generator,
+                )
+
+    def call_img2img(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
+        random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
+        pipe = self.img2img
+        init_img = preprocess_img(inputs.init_img)
+        with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
+            with torch.autocast(pipe.device.type):
+                return pipe(
+                    prompt=inputs.prompt,
+                    init_image=init_img,
+                    strength=inputs.strength,
+                    num_inference_steps=inputs.num_inference_steps,
+                    guidance_scale=inputs.guidance_scale,
+                    eta=0.0,
+                    generator=random_generator,
+                )
+
+    def call_tshirt(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
+        random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
+        pipe = self.inpainting
+        with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
+            with torch.autocast(pipe.device.type):
+                return pipe(
+                    prompt=inputs.prompt,
+                    init_image=self.tshirt_img,
+                    mask_image=self.tshirt_mask,
+                    strength=inputs.strength,
+                    num_inference_steps=inputs.num_inference_steps,
+                    guidance_scale=inputs.guidance_scale,
+                    eta=0.0,
+                    generator=random_generator,
+                )
