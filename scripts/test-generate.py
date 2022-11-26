@@ -30,6 +30,13 @@ img2img_inputs = CombinedPipelineInputs(
     nsfw_allowed=True,
 )
 
+tshirt_inputs = CombinedPipelineInputs(
+    prompt="A mexican skull design, calavera",
+    num_inference_steps=50,
+    seed=999,
+    tshirt_mode=True,
+)
+
 pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
 pipe.to("cuda")
 p = WorkerProcess(None, None)  # type: ignore
@@ -41,3 +48,7 @@ for i, result in enumerate(text2img_results):
 img2img_results = p.generate(pipe, img2img_inputs)
 for i, result in enumerate(img2img_results):
     result.img.save(f"output-img2img-{i}.png")
+
+tshirt_results = p.generate(pipe, tshirt_inputs)
+for i, result in enumerate(tshirt_results):
+    result.img.save(f"output-tshirt-{i}.png")
