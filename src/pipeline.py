@@ -7,8 +7,6 @@ from typing import Optional
 import numpy as np
 import torch
 from PIL import Image
-from transformers import CLIPTextModel
-from transformers import CLIPTokenizer
 
 from .query import Query
 
@@ -60,50 +58,40 @@ class CombinedPipeline:
         # It seems like diffusers 0.4^ loads cuda on import which breaks the setup here
         # with cuda being loaded in a separate process from the main app process.
         # So instead we delay the import and have it here instead.
-        from diffusers import AutoencoderKL
         from diffusers import EulerDiscreteScheduler
         from diffusers import StableDiffusionImg2ImgPipeline
         from diffusers import StableDiffusionInpaintPipelineLegacy
         from diffusers import StableDiffusionPipeline
-        from diffusers import UNet2DConditionModel
 
         pipeline_dir = Path(pipeline_path)
-        tokenizer = CLIPTokenizer.from_pretrained(pipeline_dir / "tokenizer")
-        text_encoder = CLIPTextModel.from_pretrained(pipeline_dir / "text_encoder")
-        vae = AutoencoderKL.from_pretrained(pipeline_dir / "vae")
-        unet = UNet2DConditionModel.from_pretrained(pipeline_dir / "unet")
+
+        # TODO: Is there a benefit in using different schedulers for different pipelines?
         scheduler = EulerDiscreteScheduler.from_pretrained(pipeline_dir / "scheduler")
 
-        self.text2img = StableDiffusionPipeline(
-            tokenizer=tokenizer,
-            text_encoder=text_encoder,
-            vae=vae,
-            unet=unet,
-            scheduler=scheduler,
-            requires_safety_checker=False,
-            safety_checker=None,
-            feature_extractor=None,
+        self.text2img = StableDiffusionPipeline.from_pretrained(
+            pipeline_dir, scheduler=scheduler, revision="fp16", torch_dtype=torch.float16
         )
 
         self.img2img = StableDiffusionImg2ImgPipeline(
-            tokenizer=tokenizer,
-            text_encoder=text_encoder,
-            vae=vae,
-            unet=unet,
-            scheduler=scheduler,
+            tokenizer=self.text2img.tokenizer,
+            text_encoder=self.text2img.text_encoder,
+            vae=self.text2img.vae,
+            unet=self.text2img.unet,
+            scheduler=self.text2img.scheduler,
             requires_safety_checker=False,
             safety_checker=None,
             feature_extractor=None,
         )
 
-        # TODO: The non legacy one requires different weights/config for unet.
-        # TODO: Maybe we can load a separate unet for this one instead?
+        # TODO:
+        # - The non legacy one requires different weights/config for unet.
+        # - Maybe we can load a separate unet for this one instead?
         self.inpainting = StableDiffusionInpaintPipelineLegacy(
-            tokenizer=tokenizer,
-            text_encoder=text_encoder,
-            vae=vae,
-            unet=unet,
-            scheduler=scheduler,
+            tokenizer=self.text2img.tokenizer,
+            text_encoder=self.text2img.text_encoder,
+            vae=self.text2img.vae,
+            unet=self.text2img.unet,
+            scheduler=self.text2img.scheduler,
             requires_safety_checker=False,
             safety_checker=None,
             feature_extractor=None,
