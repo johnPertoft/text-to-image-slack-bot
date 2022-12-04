@@ -12,15 +12,6 @@ from transformers import CLIPTokenizer
 
 from .query import Query
 
-# TODO:
-# - Just reimplement the pipeline logic
-#   - Can have a single instead of separate branches for text2img and img2img
-#   - Easier to skip the nsfw filter etc
-# - Experiment with different schedulers, euler seems popular
-# - There is a finetuned inpainting model too
-#   https://github.com/runwayml/stable-diffusion#inpainting-with-stable-diffusion
-# - Can we allow users to upload an image in slack to trigger img2img instead?
-
 
 class CombinedPipelineInputs(Query):
     seed: int
