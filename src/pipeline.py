@@ -119,7 +119,6 @@ class CombinedPipeline:
 
     def call_txt2img(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
-        pipe = self.text2img
 
         if inputs.format == "square":
             height = 512
@@ -137,43 +136,37 @@ class CombinedPipeline:
         else:
             prompt = [inputs.prompt]
 
-        # TODO: Is this autocast needed?
-        with torch.autocast(pipe.device.type):
-            return pipe(
-                prompt=prompt,
-                height=height,
-                width=width,
-                num_inference_steps=inputs.num_inference_steps,
-                guidance_scale=inputs.guidance_scale,
-                eta=0.0,
-                generator=random_generator,
-            )
+        return self.text2img(
+            prompt=prompt,
+            height=height,
+            width=width,
+            num_inference_steps=inputs.num_inference_steps,
+            guidance_scale=inputs.guidance_scale,
+            eta=0.0,
+            generator=random_generator,
+        )
 
     def call_img2img(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
-        pipe = self.img2img
-        with torch.autocast(pipe.device.type):
-            return pipe(
-                prompt=inputs.prompt,
-                init_image=inputs.init_img,
-                strength=inputs.strength,
-                num_inference_steps=inputs.num_inference_steps,
-                guidance_scale=inputs.guidance_scale,
-                eta=0.0,
-                generator=random_generator,
-            )
+        return self.img2img(
+            prompt=inputs.prompt,
+            init_image=inputs.init_img,
+            strength=inputs.strength,
+            num_inference_steps=inputs.num_inference_steps,
+            guidance_scale=inputs.guidance_scale,
+            eta=0.0,
+            generator=random_generator,
+        )
 
     def call_tshirt(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
-        pipe = self.inpainting
-        with torch.autocast(pipe.device.type):
-            return pipe(
-                prompt=inputs.prompt,
-                init_image=self.tshirt_img,
-                mask_image=self.tshirt_mask,
-                strength=inputs.strength,
-                num_inference_steps=inputs.num_inference_steps,
-                guidance_scale=inputs.guidance_scale,
-                eta=0.0,
-                generator=random_generator,
-            )
+        return self.inpainting(
+            prompt=inputs.prompt,
+            init_image=self.tshirt_img,
+            mask_image=self.tshirt_mask,
+            strength=inputs.strength,
+            num_inference_steps=inputs.num_inference_steps,
+            guidance_scale=inputs.guidance_scale,
+            eta=0.0,
+            generator=random_generator,
+        )
