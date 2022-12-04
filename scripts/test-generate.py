@@ -23,7 +23,7 @@ text2img_inputs = CombinedPipelineInputs(
 
 init_img = Image.open("images/childs-drawing.jpg")
 img2img_inputs = CombinedPipelineInputs(
-    prompt="A family on a hike in Yosemite national park, concept art, high quality digital art, by micahl lisowski, trending on artstation",  # noqa: E501
+    prompt="A family on a hike in Yosemite national park, concept art, high quality digital art, trending on artstation",  # noqa: E501
     init_img=init_img,
     num_inference_steps=50,
     seed=1234,
@@ -31,7 +31,7 @@ img2img_inputs = CombinedPipelineInputs(
 )
 
 tshirt_inputs = CombinedPipelineInputs(
-    prompt="A mexican skull design, calavera",
+    prompt="A mexican skull design, calavera, large colorful design",
     num_inference_steps=50,
     seed=999,
     tshirt_mode=True,
@@ -39,7 +39,7 @@ tshirt_inputs = CombinedPipelineInputs(
 
 pipe = CombinedPipeline("pipelines/stabilityai/stable-diffusion-2")
 pipe.to("cuda")
-p = WorkerProcess(None, None)  # type: ignore
+p = WorkerProcess(task_queue=None, slack_client=None)  # type: ignore
 
 output_dir = Path(".outputs")
 output_dir.mkdir(exist_ok=True)
