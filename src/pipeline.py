@@ -7,7 +7,6 @@ from typing import Optional
 import numpy as np
 import torch
 from PIL import Image
-from transformers import CLIPFeatureExtractor
 from transformers import CLIPTextModel
 from transformers import CLIPTokenizer
 
@@ -51,6 +50,7 @@ def preprocess_img(image: Image.Image) -> torch.FloatTensor:
     return 2.0 * image - 1.0
 
 
+# TODO: Remove this? And the nsfw_allowed option.
 @contextlib.contextmanager
 def maybe_bypass_nsfw(pipe, nsfw_allowed: bool):
     def dummy_safety_checker(images, *args, **kwargs):
@@ -70,23 +70,18 @@ class CombinedPipeline:
         # with cuda being loaded in a separate process from the main app process.
         # So instead we delay the import and have it here instead.
         from diffusers import AutoencoderKL
-        from diffusers import PNDMScheduler
+        from diffusers import EulerDiscreteScheduler
         from diffusers import StableDiffusionImg2ImgPipeline
         from diffusers import StableDiffusionInpaintPipelineLegacy
         from diffusers import StableDiffusionPipeline
         from diffusers import UNet2DConditionModel
-        from diffusers.pipelines.stable_diffusion import StableDiffusionSafetyChecker
 
         pipeline_dir = Path(pipeline_path)
         tokenizer = CLIPTokenizer.from_pretrained(pipeline_dir / "tokenizer")
         text_encoder = CLIPTextModel.from_pretrained(pipeline_dir / "text_encoder")
         vae = AutoencoderKL.from_pretrained(pipeline_dir / "vae")
         unet = UNet2DConditionModel.from_pretrained(pipeline_dir / "unet")
-        scheduler = PNDMScheduler.from_config(pipeline_dir / "scheduler")
-        feature_extractor = CLIPFeatureExtractor.from_pretrained(pipeline_dir / "feature_extractor")
-        safety_checker = StableDiffusionSafetyChecker.from_pretrained(
-            pipeline_dir / "safety_checker"
-        )
+        scheduler = EulerDiscreteScheduler.from_pretrained(pipeline_dir / "scheduler")
 
         self.text2img = StableDiffusionPipeline(
             tokenizer=tokenizer,
@@ -94,8 +89,9 @@ class CombinedPipeline:
             vae=vae,
             unet=unet,
             scheduler=scheduler,
-            safety_checker=safety_checker,
-            feature_extractor=feature_extractor,
+            requires_safety_checker=False,
+            safety_checker=None,
+            feature_extractor=None,
         )
 
         self.img2img = StableDiffusionImg2ImgPipeline(
@@ -104,19 +100,22 @@ class CombinedPipeline:
             vae=vae,
             unet=unet,
             scheduler=scheduler,
-            safety_checker=safety_checker,
-            feature_extractor=feature_extractor,
+            requires_safety_checker=False,
+            safety_checker=None,
+            feature_extractor=None,
         )
 
         # TODO: The non legacy one requires different weights/config for unet.
+        # TODO: Maybe we can load a separate unet for this one instead?
         self.inpainting = StableDiffusionInpaintPipelineLegacy(
             tokenizer=tokenizer,
             text_encoder=text_encoder,
             vae=vae,
             unet=unet,
             scheduler=scheduler,
-            safety_checker=safety_checker,
-            feature_extractor=feature_extractor,
+            requires_safety_checker=False,
+            safety_checker=None,
+            feature_extractor=None,
         )
 
         self.tshirt_img = Image.open("images/tshirt.jpeg").convert("RGB")
@@ -159,46 +158,43 @@ class CombinedPipeline:
         else:
             prompt = [inputs.prompt]
 
-        with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
-            with torch.autocast(pipe.device.type):
-                return pipe(
-                    prompt=prompt,
-                    height=height,
-                    width=width,
-                    num_inference_steps=inputs.num_inference_steps,
-                    guidance_scale=inputs.guidance_scale,
-                    eta=0.0,
-                    generator=random_generator,
-                )
+        # TODO: Is this autocast needed?
+        with torch.autocast(pipe.device.type):
+            return pipe(
+                prompt=prompt,
+                height=height,
+                width=width,
+                num_inference_steps=inputs.num_inference_steps,
+                guidance_scale=inputs.guidance_scale,
+                eta=0.0,
+                generator=random_generator,
+            )
 
     def call_img2img(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
         pipe = self.img2img
-        init_img = preprocess_img(inputs.init_img)
-        with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
-            with torch.autocast(pipe.device.type):
-                return pipe(
-                    prompt=inputs.prompt,
-                    init_image=init_img,
-                    strength=inputs.strength,
-                    num_inference_steps=inputs.num_inference_steps,
-                    guidance_scale=inputs.guidance_scale,
-                    eta=0.0,
-                    generator=random_generator,
-                )
+        with torch.autocast(pipe.device.type):
+            return pipe(
+                prompt=inputs.prompt,
+                init_image=inputs.init_img,
+                strength=inputs.strength,
+                num_inference_steps=inputs.num_inference_steps,
+                guidance_scale=inputs.guidance_scale,
+                eta=0.0,
+                generator=random_generator,
+            )
 
     def call_tshirt(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
         pipe = self.inpainting
-        with maybe_bypass_nsfw(pipe, inputs.nsfw_allowed):
-            with torch.autocast(pipe.device.type):
-                return pipe(
-                    prompt=inputs.prompt,
-                    init_image=self.tshirt_img,
-                    mask_image=self.tshirt_mask,
-                    strength=inputs.strength,
-                    num_inference_steps=inputs.num_inference_steps,
-                    guidance_scale=inputs.guidance_scale,
-                    eta=0.0,
-                    generator=random_generator,
-                )
+        with torch.autocast(pipe.device.type):
+            return pipe(
+                prompt=inputs.prompt,
+                init_image=self.tshirt_img,
+                mask_image=self.tshirt_mask,
+                strength=inputs.strength,
+                num_inference_steps=inputs.num_inference_steps,
+                guidance_scale=inputs.guidance_scale,
+                eta=0.0,
+                generator=random_generator,
+            )

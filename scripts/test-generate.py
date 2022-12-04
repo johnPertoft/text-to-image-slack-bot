@@ -37,18 +37,21 @@ tshirt_inputs = CombinedPipelineInputs(
     tshirt_mode=True,
 )
 
-pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
+pipe = CombinedPipeline("pipelines/stabilityai/stable-diffusion-2")
 pipe.to("cuda")
 p = WorkerProcess(None, None)  # type: ignore
 
+output_dir = Path(".outputs")
+output_dir.mkdir(exist_ok=True)
+
 text2img_results = p.generate(pipe, text2img_inputs)
 for i, result in enumerate(text2img_results):
-    result.img.save(f"output-text2img-{i}.png")
+    result.img.save(output_dir / f"output-text2img-{i}.png")
 
 img2img_results = p.generate(pipe, img2img_inputs)
 for i, result in enumerate(img2img_results):
-    result.img.save(f"output-img2img-{i}.png")
+    result.img.save(output_dir / f"output-img2img-{i}.png")
 
 tshirt_results = p.generate(pipe, tshirt_inputs)
 for i, result in enumerate(tshirt_results):
-    result.img.save(f"output-tshirt-{i}.png")
+    result.img.save(output_dir / f"output-tshirt-{i}.png")

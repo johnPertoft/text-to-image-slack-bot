@@ -52,7 +52,6 @@ class WorkerProcess(mp.Process):
 
     async def handle_request(self, task: InferenceTask, pipe: CombinedPipeline) -> None:
         logging.info(f"Handling request: {task}")
-
         results = self.generate(pipe, task.inputs)
 
         # Write a reply if all results were nsfw and early exit.
@@ -105,7 +104,4 @@ class WorkerProcess(mp.Process):
 
     def generate(self, pipe: CombinedPipeline, inputs: CombinedPipelineInputs) -> Image.Image:
         results = pipe(inputs)
-        return [
-            InferenceResult(img=img, nsfw=nsfw)
-            for img, nsfw in zip(results["images"], results["nsfw_content_detected"])
-        ]
+        return [InferenceResult(img=img, nsfw=False) for img in results.images]
