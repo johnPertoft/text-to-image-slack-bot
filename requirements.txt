@@ -1,6 +1,6 @@
 accelerate==0.14.0
 aiohttp==3.8.3
-diffusers==0.9.0
+diffusers==0.10.2
 ftfy==6.1.1
 google-cloud-secret-manager==2.12.4
 numpy==1.23.3
