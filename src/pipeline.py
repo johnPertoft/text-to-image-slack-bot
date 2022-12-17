@@ -121,8 +121,8 @@ class CombinedPipeline:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
 
         if inputs.format == "square":
-            height = 512
-            width = 512
+            height = 768
+            width = 768
         elif inputs.format == "wide":
             height = 512
             width = 768
