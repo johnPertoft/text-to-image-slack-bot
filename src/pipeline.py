@@ -65,7 +65,10 @@ class CombinedPipeline:
 
         pipeline_dir = Path(pipeline_path)
 
-        # TODO: Is there a benefit in using different schedulers for different pipelines?
+        # TODO: Should we make the scheduler configurable too?
+        # scheduler = EulerAncestralDiscreteScheduler.from_pretrained(
+        #   model_id, subfolder="scheduler")
+        # DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
         scheduler = EulerDiscreteScheduler.from_pretrained(pipeline_dir / "scheduler")
 
         self.text2img = StableDiffusionPipeline.from_pretrained(
