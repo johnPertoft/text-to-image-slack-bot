@@ -39,7 +39,7 @@ class WorkerProcess(mp.Process):
     async def handle_requests_forever(self) -> None:
         # Need to make sure to load the model in this forked process rather than
         # in the main process because otherwise CUDA complains.
-        pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
+        pipe = CombinedPipeline("pipelines/stabilityai/stable-diffusion-2")
         pipe.to("cuda")
 
         logging.info("Inference ready to handle requests")
