@@ -93,9 +93,9 @@ class CombinedPipeline:
             width = 768
         elif inputs.format == "wide":
             height = 768
-            width = 1024
+            width = 1152
         else:
-            height = 1024
+            height = 1152
             width = 768
 
         return self.text2img(
