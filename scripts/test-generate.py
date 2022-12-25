@@ -15,7 +15,7 @@ from src.pipeline import CombinedPipelineInputs  # noqa: E402
 from src.worker import WorkerProcess  # noqa: E402
 
 text2img_inputs = CombinedPipelineInputs(
-    prompt="Street level view from a cyberpunk city, concept art, high quality digital art, by michal lisowski, trending on artstation",  # noqa: E501
+    prompt="Street level view from a cyberpunk city, concept art, high quality digital art, highly detailed, realistic, by michal lisowski, trending on artstation",  # noqa: E501
     num_inference_steps=50,
     seed=1234,
     nsfw_allowed=True,
@@ -23,7 +23,7 @@ text2img_inputs = CombinedPipelineInputs(
 
 init_img = Image.open("images/childs-drawing.jpg")
 img2img_inputs = CombinedPipelineInputs(
-    prompt="A family on a hike in Yosemite national park, concept art, high quality digital art, by micahl lisowski, trending on artstation",  # noqa: E501
+    prompt="A family on a hike in Yosemite national park, concept art, 1800s oilpainting, realistic, muted colors, highly detailed",  # noqa: E501
     init_img=init_img,
     num_inference_steps=50,
     seed=1234,
@@ -31,24 +31,27 @@ img2img_inputs = CombinedPipelineInputs(
 )
 
 tshirt_inputs = CombinedPipelineInputs(
-    prompt="A mexican skull design, calavera",
+    prompt="A mexican skull design, calavera, large colorful design",
     num_inference_steps=50,
     seed=999,
     tshirt_mode=True,
 )
 
-pipe = CombinedPipeline("pipelines/stable-diffusion-v1-4")
+pipe = CombinedPipeline("pipelines/stabilityai/stable-diffusion-2")
 pipe.to("cuda")
-p = WorkerProcess(None, None)  # type: ignore
+p = WorkerProcess(task_queue=None, slack_client=None)  # type: ignore
+
+output_dir = Path(".outputs")
+output_dir.mkdir(exist_ok=True)
 
 text2img_results = p.generate(pipe, text2img_inputs)
 for i, result in enumerate(text2img_results):
-    result.img.save(f"output-text2img-{i}.png")
+    result.img.save(output_dir / f"output-text2img-{i}.png")
 
 img2img_results = p.generate(pipe, img2img_inputs)
 for i, result in enumerate(img2img_results):
-    result.img.save(f"output-img2img-{i}.png")
+    result.img.save(output_dir / f"output-img2img-{i}.png")
 
 tshirt_results = p.generate(pipe, tshirt_inputs)
 for i, result in enumerate(tshirt_results):
-    result.img.save(f"output-tshirt-{i}.png")
+    result.img.save(output_dir / f"output-tshirt-{i}.png")
