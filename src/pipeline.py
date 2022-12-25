@@ -53,6 +53,8 @@ class CombinedPipeline:
         # TODO:
         # - The non legacy one requires different weights/config for unet.
         # - Maybe we can load a separate unet for this one instead?
+        # - It's also using further finetuned weights for the other model
+        #   parts.
         self.inpainting = StableDiffusionInpaintPipelineLegacy(
             tokenizer=self.text2img.tokenizer,
             text_encoder=self.text2img.text_encoder,
@@ -64,7 +66,6 @@ class CombinedPipeline:
             feature_extractor=None,
         )
 
-        # TODO: Increase the size of these?
         self.tshirt_img = Image.open("images/tshirt.jpeg").convert("RGB")
         self.tshirt_mask = Image.open("images/tshirt-mask.jpeg").convert("RGB")
 
