@@ -97,6 +97,7 @@ class CombinedPipeline:
             feature_extractor=None,
         )
 
+        # TODO: Increase the size of these?
         self.tshirt_img = Image.open("images/tshirt.jpeg").convert("RGB")
         self.tshirt_mask = Image.open("images/tshirt-mask.jpeg").convert("RGB")
 
@@ -124,20 +125,14 @@ class CombinedPipeline:
             height = 768
             width = 768
         elif inputs.format == "wide":
-            height = 512
-            width = 768
-        else:
             height = 768
-            width = 512
-
-        if height * width <= 512 * 512:
-            # This image size allows us to run with batch size 2.
-            prompt = [inputs.prompt] * 2
+            width = 1024
         else:
-            prompt = [inputs.prompt]
+            height = 1024
+            width = 768
 
         return self.text2img(
-            prompt=prompt,
+            prompt=inputs.prompt,
             height=height,
             width=width,
             num_inference_steps=inputs.num_inference_steps,
@@ -150,7 +145,7 @@ class CombinedPipeline:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
         return self.img2img(
             prompt=inputs.prompt,
-            init_image=inputs.init_img,
+            image=inputs.init_img,
             strength=inputs.strength,
             num_inference_steps=inputs.num_inference_steps,
             guidance_scale=inputs.guidance_scale,
@@ -162,7 +157,7 @@ class CombinedPipeline:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
         return self.inpainting(
             prompt=inputs.prompt,
-            init_image=self.tshirt_img,
+            image=self.tshirt_img,
             mask_image=self.tshirt_mask,
             strength=inputs.strength,
             num_inference_steps=inputs.num_inference_steps,
