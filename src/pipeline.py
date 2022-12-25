@@ -4,7 +4,6 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 
-import numpy as np
 import torch
 from PIL import Image
 
@@ -17,26 +16,6 @@ class CombinedPipelineInputs(Query):
 
     class Config:
         arbitrary_types_allowed = True
-
-
-def preprocess_img(image: Image.Image) -> torch.FloatTensor:
-    # TODO:
-    # - The collab was running with a t4 too, why wasn't it running
-    #   out of mem with 512x1024 img?
-    # - Do resizing + cropping properly instead.
-    # - Needs to be a multiple of 32. Add assertion.
-    w, h = image.size
-    if w / h >= 1.3:
-        image = image.resize((768, 512), resample=Image.LANCZOS)
-    elif h / w >= 1.3:
-        image = image.resize((512, 768), resample=Image.LANCZOS)
-    else:
-        image = image.resize((512, 512), resample=Image.LANCZOS)
-
-    image = np.array(image).astype(np.float32) / 255.0
-    image = image[None].transpose(0, 3, 1, 2)
-    image = torch.from_numpy(image)
-    return 2.0 * image - 1.0
 
 
 # TODO: Remove this? And the nsfw_allowed option.
