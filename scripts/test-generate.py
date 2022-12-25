@@ -15,7 +15,7 @@ from src.pipeline import CombinedPipelineInputs  # noqa: E402
 from src.worker import WorkerProcess  # noqa: E402
 
 text2img_inputs = CombinedPipelineInputs(
-    prompt="Street level view from a cyberpunk city, concept art, high quality digital art, by michal lisowski, trending on artstation",  # noqa: E501
+    prompt="Street level view from a cyberpunk city, concept art, high quality digital art, highly detailed, realistic, by michal lisowski, trending on artstation",  # noqa: E501
     num_inference_steps=50,
     seed=1234,
     nsfw_allowed=True,
@@ -23,7 +23,7 @@ text2img_inputs = CombinedPipelineInputs(
 
 init_img = Image.open("images/childs-drawing.jpg")
 img2img_inputs = CombinedPipelineInputs(
-    prompt="A family on a hike in Yosemite national park, concept art, high quality digital art, trending on artstation",  # noqa: E501
+    prompt="A family on a hike in Yosemite national park, concept art, 1800s oilpainting, realistic, muted colors, highly detailed",  # noqa: E501
     init_img=init_img,
     num_inference_steps=50,
     seed=1234,
