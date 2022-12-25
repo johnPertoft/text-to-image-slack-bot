@@ -1,4 +1,3 @@
-import contextlib
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -16,20 +15,6 @@ class CombinedPipelineInputs(Query):
 
     class Config:
         arbitrary_types_allowed = True
-
-
-# TODO: Remove this? And the nsfw_allowed option.
-@contextlib.contextmanager
-def maybe_bypass_nsfw(pipe, nsfw_allowed: bool):
-    def dummy_safety_checker(images, *args, **kwargs):
-        has_nsfw_concept = [False] * len(images)
-        return images, has_nsfw_concept
-
-    original_safety_checker = pipe.safety_checker
-    if nsfw_allowed:
-        pipe.safety_checker = dummy_safety_checker
-    yield pipe
-    pipe.safety_checker = original_safety_checker
 
 
 class CombinedPipeline:
