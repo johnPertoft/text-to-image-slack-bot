@@ -1,7 +1,12 @@
-#!/usr/bin/python
 import torch
 from diffusers import StableDiffusionPipeline
 
-StableDiffusionPipeline.from_pretrained(
-    "stabilityai/stable-diffusion-2", revision="fp16", torch_dtype=torch.float16
-).save_pretrained("pipelines/stabilityai/stable-diffusion-2")
+model_ids = [
+    "stabilityai/stable-diffusion-2",
+    "stabilityai/stable-diffusion-2-1",
+    "runwayml/stable-diffusion-v1-5",
+]
+for model_id in model_ids:
+    StableDiffusionPipeline.from_pretrained(
+        model_id, revision="fp16", torch_dtype=torch.float16
+    ).save_pretrained(f"pipelines/{model_id}")
