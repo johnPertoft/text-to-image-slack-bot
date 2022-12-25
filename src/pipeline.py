@@ -101,6 +101,7 @@ class CombinedPipeline:
 
         return self.text2img(
             prompt=inputs.prompt,
+            negative_prompt=inputs.negative_prompt,
             height=height,
             width=width,
             num_inference_steps=inputs.num_inference_steps,
@@ -113,6 +114,7 @@ class CombinedPipeline:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
         return self.img2img(
             prompt=inputs.prompt,
+            negative_prompt=inputs.negative_prompt,
             image=inputs.init_img,
             strength=inputs.strength,
             num_inference_steps=inputs.num_inference_steps,
@@ -125,6 +127,7 @@ class CombinedPipeline:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
         return self.inpainting(
             prompt=inputs.prompt,
+            negative_prompt=inputs.negative_prompt,
             image=self.tshirt_img,
             mask_image=self.tshirt_mask,
             strength=inputs.strength,

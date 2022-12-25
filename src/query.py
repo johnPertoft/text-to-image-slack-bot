@@ -12,6 +12,7 @@ from pydantic import HttpUrl
 
 class Query(BaseModel):
     prompt: str
+    negative_prompt: Optional[str]
     seed: Optional[int]
     img_url: Optional[HttpUrl]
     num_inference_steps: int = Field(default=50, ge=1, le=100)
@@ -60,12 +61,14 @@ def parse_query(raw_query: str) -> Query:
 
 
 def parse_config(config_str: str) -> Dict[str, Any]:
-    # We don't allow spaces to carry any significance here.
-    config_str = config_str.replace(" ", "")
+    config_str = remove_insignificant_spaces(config_str)
 
     # Early exit if no config supplied.
     if config_str == "":
         return dict()
+
+    quotes_matches = re.finditer(r"\".*\"", config_str)
+    quotes_spans = [q.span() for q in quotes_matches]
 
     # Slack formats urls with angled brackets like <https://...>
     # Sometimes urls contain commas so need to take this into account
@@ -75,9 +78,12 @@ def parse_config(config_str: str) -> Dict[str, Any]:
     url_spans = [url_match.span() for url_match in url_matches]
 
     # The valid commas to split at are the ones not within the url match
-    # spans.
+    # spans and not within quotes.
+    non_split_spans = set(quotes_spans + url_spans)
     all_comma_indices = [m.span()[0] for m in re.finditer(",", config_str)]
-    split_indices = [i for i in all_comma_indices if not any(s1 <= i < s2 for s1, s2 in url_spans)]
+    split_indices = [
+        i for i in all_comma_indices if not any(s1 <= i < s2 for s1, s2 in non_split_spans)
+    ]
     prev_idx = 0
     split_spans = []
     for split_idx in split_indices:
@@ -99,4 +105,26 @@ def parse_config(config_str: str) -> Dict[str, Any]:
     # Remove any Slack formatting brackets
     config = {k: maybe_remove_slack_formatting(v) for k, v in config.items()}
 
+    def maybe_remove_quotes(x: str) -> str:
+        m = re.search(r"\"(.*?)\"", x)
+        if m is not None:
+            return m.group(1)
+        else:
+            return x
+
+    # Remove quotes from string arguments.
+    config = {k: maybe_remove_quotes(v) for k, v in config.items()}
+
     return config
+
+
+def remove_insignificant_spaces(x: str) -> str:
+    pattern = re.compile(r'"[^"]*"|(\s+)')
+
+    def replacement(m):
+        if m.group(1):
+            return ""
+        else:
+            return m.group(0)
+
+    return pattern.sub(replacement, x)

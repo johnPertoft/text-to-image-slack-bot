@@ -41,6 +41,13 @@ def test_config_with_uri_last():
     assert q.seed == 123
 
 
+def test_config_with_negative_prompt():
+    raw = '<@burgerman> negative_prompt="green banana, blue" | a red apple'
+    q = parse_query(raw)
+    assert q.prompt == "a red apple"
+    assert q.negative_prompt == "green banana, blue"
+
+
 def test_config_with_extra_spaces():
     raw = "<@burgerman> seed = 123 , img_url= <https://test.url/img.png?abc=1,2,3> | a red apple"
     q = parse_query(raw)

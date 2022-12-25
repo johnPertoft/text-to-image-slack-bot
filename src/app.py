@@ -80,6 +80,7 @@ async def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
 
     return CombinedPipelineInputs(
         prompt=query.prompt,
+        negative_prompt=query.negative_prompt,
         seed=query.seed or random.randint(0, 10000),
         guidance_scale=query.guidance_scale,
         num_inference_steps=query.num_inference_steps,
