@@ -54,21 +54,6 @@ class WorkerProcess(mp.Process):
         logging.info(f"Handling request: {task}")
         results = self.generate(pipe, task.inputs)
 
-        # TODO: This can't happen anymore, remove?
-        # Write a reply if all results were nsfw and early exit.
-        if all(result.nsfw for result in results):
-            nsfw_msg = "\n".join(
-                [
-                    "Oops! All results were NSFW!",
-                    f"You can retry with `@{SLACK_APP_NAME} nsfw_allowed=True | {task.inputs.prompt}`",  # noqa: E501
-                ]
-            )
-            return await self.slack_client.chat_postMessage(
-                text=nsfw_msg,
-                channel=task.channel,
-                thread_ts=task.thread_ts,
-            )
-
         # Upload images to Slack.
         results = [result for result in results if not result.nsfw]
         images = [r.img for r in results]
@@ -112,6 +97,8 @@ class WorkerProcess(mp.Process):
             file_uploads=img_uploads,
         )
 
-    def generate(self, pipe: CombinedPipeline, inputs: CombinedPipelineInputs) -> Image.Image:
+    def generate(
+        self, pipe: CombinedPipeline, inputs: CombinedPipelineInputs
+    ) -> List[InferenceResult]:
         results = pipe(inputs)
         return [InferenceResult(img=img, nsfw=False) for img in results.images]
