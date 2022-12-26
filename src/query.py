@@ -35,24 +35,24 @@ class Query(BaseModel):
 assert sum(f.required for f in Query.__fields__.values()), "Just one required arg allowed"
 
 # Create an argument parser from the Query model.
-PARSER = argparse.ArgumentParser()
-PARSER.add_argument("prompt", nargs="+")
+QUERY_PARSER = argparse.ArgumentParser()
+QUERY_PARSER.add_argument("prompt", nargs="+")
 for argname, field in Query.__fields__.items():
     if not field.required:
         if field.type_ == bool:
-            PARSER.add_argument(
+            QUERY_PARSER.add_argument(
                 f"--{argname}", action=argparse.BooleanOptionalAction, default=False
             )
         else:
-            PARSER.add_argument(f"--{argname}")
+            QUERY_PARSER.add_argument(f"--{argname}")
 
 # Create a usage string.
-USAGE_STR = PARSER.format_help()
-usage_str_lines = re.split(r"\n+", USAGE_STR)
+APP_USAGE_STR = QUERY_PARSER.format_help()
+usage_str_lines = re.split(r"\n+", APP_USAGE_STR)
 usage_str_lines = [line for line in usage_str_lines if "show this help message" not in line]
-USAGE_STR = "\n".join(usage_str_lines)
-USAGE_STR = USAGE_STR.replace("[-h]", "")
-USAGE_STR = USAGE_STR.replace("app.py", f"@{SLACK_APP_NAME}")
+APP_USAGE_STR = "\n".join(usage_str_lines)
+APP_USAGE_STR = APP_USAGE_STR.replace("[-h]", "")
+APP_USAGE_STR = APP_USAGE_STR.replace("app.py", f"@{SLACK_APP_NAME}")
 
 
 def parse_query(raw_query: str) -> Query:
@@ -67,7 +67,7 @@ def parse_query(raw_query: str) -> Query:
 
     # Parse query.
     try:
-        args = PARSER.parse_args(shlex.split(query))
+        args = QUERY_PARSER.parse_args(shlex.split(query))
         config = vars(args)
         config = {k: v for k, v in config.items() if v is not None}
     except:  # noqa: E722

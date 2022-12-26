@@ -15,7 +15,7 @@ from slack_bolt.async_app import AsyncApp
 from .constants import GCP_SLACK_BOT_TOKEN_SECRET_NAME
 from .constants import GCP_SLACK_SIGNING_SECRET_NAME
 from .pipeline import CombinedPipelineInputs
-from .query import USAGE_STR
+from .query import APP_USAGE_STR
 from .query import ParseQueryException
 from .query import Query
 from .query import parse_query
@@ -93,14 +93,14 @@ async def app_mention(body: Dict[str, Any], say: Say):
     try:
         query = parse_query(raw_event_text)
     except ParseQueryException as e:
-        return await say_in_thread(f"Oops! {e}\n\n{USAGE_STR}")
+        return await say_in_thread(f"Oops! {e}\n\n{APP_USAGE_STR}")
 
     try:
         pipeline_inputs = await prepare_pipeline_inputs(query)
     except DownloadError as e:
         return await say_in_thread(f"Oops! {e}")
     except ValidationError:
-        return await say_in_thread(f"Oops! I couldn't validate those inputs!\n\n{USAGE_STR}")
+        return await say_in_thread(f"Oops! I couldn't validate those inputs!\n\n{APP_USAGE_STR}")
 
     # Acknowledge that the query was parsed correctly and queue up the inference request.
     await app.client.reactions_add(
