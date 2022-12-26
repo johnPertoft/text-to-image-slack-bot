@@ -1,5 +1,4 @@
 import pytest
-from pydantic import ValidationError
 
 from .query import ParseQueryException
 from .query import parse_query
@@ -12,7 +11,15 @@ def test_just_prompt_str():
 
 
 def test_simple_config():
-    raw = "<@burgerman> seed=123, format=tall | a red apple"
+    raw = "<@burgerman> a red apple --format=tall --seed=123"
+    q = parse_query(raw)
+    assert q.prompt == "a red apple"
+    assert q.seed == 123
+    assert q.format == "tall"
+
+
+def test_simple_config_prompt_last():
+    raw = "<@burgerman> --format=tall --seed=123 a red apple "
     q = parse_query(raw)
     assert q.prompt == "a red apple"
     assert q.seed == 123
@@ -20,39 +27,32 @@ def test_simple_config():
 
 
 def test_config_with_uri():
-    raw = "<@burgerman> img_url=<https://test.url/img.png> | a red apple"
+    raw = "<@burgerman> a red apple --img_url=<https://test.url/img.png>"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
     assert q.img_url == "https://test.url/img.png"
 
 
 def test_config_with_uri_with_commas():
-    raw = "<@burgerman> img_url=<https://test.url/img.png?abc=1,2,3> | a red apple"
+    raw = "<@burgerman> a red apple --img_url=<https://test.url/img.png?abc=1,2,3>"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
     assert q.img_url == "https://test.url/img.png?abc=1,2,3"
 
 
 def test_config_with_uri_last():
-    raw = "<@burgerman> seed=123, img_url=<https://test.url/img.png?abc=1,2,3> | a red apple"
+    raw = "<@burgerman> a red apple --seed=123 --img_url=<https://test.url/img.png?abc=1,2,3>"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
     assert q.img_url == "https://test.url/img.png?abc=1,2,3"
     assert q.seed == 123
 
 
-def test_config_with_extra_spaces():
-    raw = "<@burgerman> seed = 123 , img_url= <https://test.url/img.png?abc=1,2,3> | a red apple"
+def test_config_with_negative_prompt():
+    raw = '<@burgerman> a red apple --negative_prompt="green banana, blue"'
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_url == "https://test.url/img.png?abc=1,2,3"
-    assert q.seed == 123
-
-
-def test_empty_config():
-    raw = "<@burgerman> | a red apple"
-    q = parse_query(raw)
-    assert q.prompt == "a red apple"
+    assert q.negative_prompt == "green banana, blue"
 
 
 def test_malformed_no_mention():
@@ -61,33 +61,27 @@ def test_malformed_no_mention():
         parse_query(raw)
 
 
-def test_malformed_config():
-    raw = "<@burgerman> ,,,,, | a red apple"
+def test_undefined_config_item():
+    raw = "<@burgerman> a red apple --undefined_option=123"
     with pytest.raises(ParseQueryException):
         parse_query(raw)
 
 
-def test_undefined_config_item():
-    raw = "<@burgerman> undefined_option=123 | a red apple"
-    with pytest.raises(ValidationError):
-        parse_query(raw)
-
-
 def test_invalid_config_value():
-    raw = "<@burgerman> seed=hmmm | a red apple"
-    with pytest.raises(ValidationError):
+    raw = "<@burgerman> a red apple --seed=hmmm"
+    with pytest.raises(ParseQueryException):
         parse_query(raw)
 
 
 def test_misspelled_img_url():
     # Note: img_uri not img_urL here.
-    raw = "<@burgerman> img_uri=<https://test.url/img.png?abc=1,2,3> | a red apple"
-    with pytest.raises(ValidationError):
+    raw = "<@burgerman> a red apple --img_uri=<https://test.url/img.png?abc=1,2,3>"
+    with pytest.raises(ParseQueryException):
         parse_query(raw)
 
 
 def test_text_before_mention():
-    raw = "here is some text followed by <@burgerman> seed=123, img_url=<https://test.url/img.png?abc=1,2,3> | a red apple"  # noqa: E501
+    raw = "here is some text followed by <@burgerman> a red apple --seed=123 --img_url=<https://test.url/img.png?abc=1,2,3>"  # noqa: E501
     q = parse_query(raw)
     assert q.prompt == "a red apple"
     assert q.img_url == "https://test.url/img.png?abc=1,2,3"

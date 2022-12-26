@@ -54,20 +54,6 @@ class WorkerProcess(mp.Process):
         logging.info(f"Handling request: {task}")
         results = self.generate(pipe, task.inputs)
 
-        # Write a reply if all results were nsfw and early exit.
-        if all(result.nsfw for result in results):
-            nsfw_msg = "\n".join(
-                [
-                    "Oops! All results were NSFW!",
-                    f"You can retry with `@{SLACK_APP_NAME} nsfw_allowed=True | {task.inputs.prompt}`",  # noqa: E501
-                ]
-            )
-            return await self.slack_client.chat_postMessage(
-                text=nsfw_msg,
-                channel=task.channel,
-                thread_ts=task.thread_ts,
-            )
-
         # Upload images to Slack.
         results = [result for result in results if not result.nsfw]
         images = [r.img for r in results]
@@ -76,11 +62,20 @@ class WorkerProcess(mp.Process):
         # Write a reply in original message with instructions for how to reproduce results.
         config = task.inputs.dict()
         prompt = config.pop("prompt")
-        config_str = ", ".join(f"{k}={v}" for k, v in config.items() if v is not None)
+        config_strs = []
+        for k, v in config.items():
+            if v is None:
+                continue
+            if isinstance(v, bool):
+                if v:
+                    config_strs.append(f"--{k}")
+            else:
+                config_strs.append(f"--{k}={v}")
+        config_str = " ".join(config_strs)
         command_to_reproduce = "\n".join(
             [
                 "Use this command to reproduce the same result:",
-                f"`@{SLACK_APP_NAME} {config_str} | {prompt}`",
+                f"`@{SLACK_APP_NAME} {prompt} {config_str}`",
             ]
         )
         await self.slack_client.chat_postMessage(
@@ -102,6 +97,8 @@ class WorkerProcess(mp.Process):
             file_uploads=img_uploads,
         )
 
-    def generate(self, pipe: CombinedPipeline, inputs: CombinedPipelineInputs) -> Image.Image:
+    def generate(
+        self, pipe: CombinedPipeline, inputs: CombinedPipelineInputs
+    ) -> List[InferenceResult]:
         results = pipe(inputs)
         return [InferenceResult(img=img, nsfw=False) for img in results.images]
