@@ -32,11 +32,10 @@ class Query(BaseModel):
         extra = Extra.forbid
 
 
-assert sum(f.required for f in Query.__fields__.values()), "Just one required arg allowed"
-
 # Create an argument parser from the Query model.
 QUERY_PARSER = argparse.ArgumentParser()
 QUERY_PARSER.add_argument("prompt", nargs="+")
+assert sum(f.required for f in Query.__fields__.values()) == 1, "Just one required arg allowed"
 for argname, field in Query.__fields__.items():
     if not field.required:
         if field.type_ == bool:
