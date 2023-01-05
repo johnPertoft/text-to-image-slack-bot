@@ -64,6 +64,10 @@ def parse_query(raw_query: str) -> Query:
     # The second match group is the actual query for the app.
     query = app_mention_match.group(2)
 
+    # We want to keep apostrophes around but they break the initial parsing
+    # so they need to be escaped.
+    query = query.replace("'", "\\'")
+
     # Parse query.
     try:
         args = QUERY_PARSER.parse_args(shlex.split(query))

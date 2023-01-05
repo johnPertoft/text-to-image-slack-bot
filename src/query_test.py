@@ -55,6 +55,12 @@ def test_config_with_negative_prompt():
     assert q.negative_prompt == "green banana, blue"
 
 
+def test_config_with_apostrophe():
+    raw = "<@burgerman> an apple's banana"
+    q = parse_query(raw)
+    assert q.prompt == "an apple's banana"
+
+
 def test_malformed_no_mention():
     raw = "a red apple"
     with pytest.raises(ParseQueryException):
