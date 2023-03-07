@@ -6,6 +6,7 @@ from typing import List
 
 from PIL import Image
 from pydantic import BaseModel
+from slack_sdk.web.async_client import AsyncSlackResponse
 from slack_sdk.web.async_client import AsyncWebClient
 
 from .constants import SLACK_APP_NAME
@@ -84,7 +85,9 @@ class WorkerProcess(mp.Process):
             thread_ts=task.thread_ts,
         )
 
-    async def upload_images(self, imgs: List[Image.Image], channel: str, title: str) -> None:
+    async def upload_images(
+        self, imgs: List[Image.Image], channel: str, title: str
+    ) -> AsyncSlackResponse:
         img_uploads = []
         for i, img in enumerate(imgs):
             buffer = io.BytesIO()
