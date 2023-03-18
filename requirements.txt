@@ -1,4 +1,4 @@
-accelerate==0.15.0
+accelerate==0.17.1
 aiohttp==3.8.3
 diffusers==0.14.0
 ftfy==6.1.1
