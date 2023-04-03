@@ -1,6 +1,8 @@
 import argparse
 import re
 import shlex
+from typing import Any
+from typing import Dict
 from typing import Literal
 from typing import Optional
 
@@ -93,3 +95,20 @@ def remove_slack_link_formatting(x: str) -> str:
         return m.group(1)
     else:
         return x
+
+
+def get_flags_string(config: Dict[str, Any]):
+    config_strs = []
+    for k, v in config.items():
+        match v:
+            case None:
+                continue
+            case bool():
+                if v:
+                    config_strs.append(f"--{k}")
+            case str():
+                config_strs.append(f'--{k}="{v}"')
+            case _:
+                config_strs.append(f"--{k}={v}")
+    config_str = " ".join(config_strs)
+    return config_str

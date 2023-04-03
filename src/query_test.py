@@ -1,6 +1,9 @@
+from collections import OrderedDict
+
 import pytest
 
 from .query import ParseQueryException
+from .query import get_flags_string
 from .query import parse_query
 
 
@@ -92,3 +95,13 @@ def test_text_before_mention():
     assert q.prompt == "a red apple"
     assert q.img_url == "https://test.url/img.png?abc=1,2,3"
     assert q.seed == 123
+
+
+def test_get_flags_string():
+    # OrderedDict is not required by the function but is required
+    # for this assertion to be correct.
+    config = OrderedDict(
+        [("aaa", True), ("bbb", "this is a string with spaces"), ("ccc", 10.0), ("ddd", None)]
+    )
+    flags_str = get_flags_string(config)
+    assert flags_str == '--aaa --bbb="this is a string with spaces" --ccc=10.0'

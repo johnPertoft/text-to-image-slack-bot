@@ -12,6 +12,7 @@ from slack_sdk.web.async_client import AsyncWebClient
 from .constants import SLACK_APP_NAME
 from .pipeline import CombinedPipeline
 from .pipeline import CombinedPipelineInputs
+from .query import get_flags_string
 
 
 class InferenceTask(BaseModel):
@@ -63,16 +64,7 @@ class WorkerProcess(mp.Process):
         # Write a reply in original message with instructions for how to reproduce results.
         config = task.inputs.dict()
         prompt = config.pop("prompt")
-        config_strs = []
-        for k, v in config.items():
-            if v is None:
-                continue
-            if isinstance(v, bool):
-                if v:
-                    config_strs.append(f"--{k}")
-            else:
-                config_strs.append(f"--{k}={v}")
-        config_str = " ".join(config_strs)
+        config_str = get_flags_string(config)
         command_to_reproduce = "\n".join(
             [
                 "Use this command to reproduce the same result:",
