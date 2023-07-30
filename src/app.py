@@ -117,6 +117,17 @@ async def app_mention(body: Dict[str, Any], say: Say):
     )
 
 
+@app.event("file_created")
+async def file_created(body: Dict[str, Any]):
+    logging.warning(f"FILE CREATED! {body}")
+
+
+@app.event("file_shared")
+async def file_shared(body: Dict[str, Any]):
+    # TODO: This one (if working) should contain the ts I think
+    logging.warning(f"FILE SHARED! {body}")
+
+
 if __name__ == "__main__":
     port = os.environ.get("PORT", 3000)
     port = int(port)

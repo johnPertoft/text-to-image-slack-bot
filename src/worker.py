@@ -60,6 +60,15 @@ class WorkerProcess(mp.Process):
         images = [r.img for r in results]
         await self.upload_images(images, channel=task.channel, title=task.inputs.prompt)
 
+        # TODO: It seems that the response after uploading with files_upload_v2 doesn't
+        # contain all information, e.g. the thread identifier we need here to respond to
+        # the image upload.
+        # https://github.com/slackapi/python-slack-sdk/issues/1277
+        # One workaround could be to continuously poll files.info with the file id which we
+        # do have here.
+        # Perhaps lots of complexity for a small gain?
+        # TODO: Could maybe listen to file_created event?
+
         # Write a reply in original message with instructions for how to reproduce results.
         config = task.inputs.dict()
         prompt = config.pop("prompt")
