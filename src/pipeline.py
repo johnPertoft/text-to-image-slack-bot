@@ -3,6 +3,7 @@ from typing import Dict
 from typing import Optional
 
 import torch
+from loguru import logger
 from PIL import Image
 
 from .query import Query
@@ -26,6 +27,7 @@ class CombinedPipeline:
         from diffusers import StableDiffusionXLInpaintPipeline
         from diffusers import StableDiffusionXLPipeline
 
+        logger.info("Loading text2img pipeline")
         self.text2img = StableDiffusionXLPipeline.from_pretrained(
             "stabilityai/stable-diffusion-xl-base-1.0",
             torch_dtype=torch.float16,
@@ -39,6 +41,13 @@ class CombinedPipeline:
         # )
         self.text2img.to(torch_dtype=torch.float16)
 
+        logger.info("Compiling text2img pipeline")
+        self.text2img.unet.to(memory_format=torch.channels_last)  # TODO: Important? Consequences?
+        self.text2img.unet = torch.compile(
+            self.text2img.unet, mode="reduce-overhead", fullgraph=True
+        )
+
+        logger.info("Creating img2img pipeline from text2img components")
         self.img2img = StableDiffusionXLImg2ImgPipeline(
             vae=self.text2img.vae,
             text_encoder=self.text2img.text_encoder,
@@ -49,6 +58,7 @@ class CombinedPipeline:
             scheduler=self.text2img.scheduler,
         )
 
+        logger.info("Creating inpainting pipeline from text2img components")
         self.inpainting = StableDiffusionXLInpaintPipeline(
             vae=self.text2img.vae,
             text_encoder=self.text2img.text_encoder,
