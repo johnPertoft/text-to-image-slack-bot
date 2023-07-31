@@ -62,7 +62,7 @@ async def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
     if query_dict["img_url"] is not None:
         logging.info(f"Downloading {query.img_url}")
         img = await download_img(
-            query.img_url, slack_token=get_secret(GCP_SLACK_BOT_TOKEN_SECRET_NAME)
+            query_dict["img_url"], slack_token=get_secret(GCP_SLACK_BOT_TOKEN_SECRET_NAME)
         )
         query_dict["init_img"] = img
     else:
