@@ -34,11 +34,11 @@ class CombinedPipeline:
             variant="fp16",
             use_safetensors=True,
         )
-        # TODO: What is this lora ckpt doing exactly?
-        # self.text2img.load_lora_weights(
-        #     "stabilityai/stable-diffusion-xl-base-1.0",
-        #     weight_name="sd_xl_offset_example-lora_1.0.safetensors",
-        # )
+        # TODO: What is this lora ckpt doing exactly? Very unclear.
+        self.text2img.load_lora_weights(
+            "stabilityai/stable-diffusion-xl-base-1.0",
+            weight_name="sd_xl_offset_example-lora_1.0.safetensors",
+        )
         self.text2img.to(torch_dtype=torch.float16)
 
         # TODO: Not speeding up much and is slower initially.
