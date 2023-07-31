@@ -19,7 +19,6 @@ RUN pip install -r /tmp/requirements.txt
 #############################################
 FROM base AS prod
 WORKDIR /workspace
-COPY pipelines pipelines
 COPY images images
 COPY src src
 ENTRYPOINT ["python", "-m", "src.app"]

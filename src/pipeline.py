@@ -1,9 +1,9 @@
-from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import Optional
 
 import torch
+from loguru import logger
 from PIL import Image
 
 from .query import Query
@@ -18,60 +18,65 @@ class CombinedPipelineInputs(Query):
 
 
 class CombinedPipeline:
-    def __init__(self, pipeline_path: str):
+    def __init__(self):
+        # TODO: Check if this delayed import is still necessary
         # It seems like diffusers 0.4^ loads cuda on import which breaks the setup here
         # with cuda being loaded in a separate process from the main app process.
         # So instead we delay the import and have it here instead.
-        from diffusers import EulerDiscreteScheduler
-        from diffusers import StableDiffusionImg2ImgPipeline
-        from diffusers import StableDiffusionInpaintPipelineLegacy
-        from diffusers import StableDiffusionPipeline
+        from diffusers import StableDiffusionXLImg2ImgPipeline
+        from diffusers import StableDiffusionXLInpaintPipeline
+        from diffusers import StableDiffusionXLPipeline
 
-        pipeline_dir = Path(pipeline_path)
-
-        # TODO: Should we make the scheduler configurable too?
-        # scheduler = EulerAncestralDiscreteScheduler.from_pretrained(
-        #   model_id, subfolder="scheduler")
-        # DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
-        scheduler = EulerDiscreteScheduler.from_pretrained(pipeline_dir / "scheduler")
-
-        self.text2img = StableDiffusionPipeline.from_pretrained(
-            pipeline_dir, scheduler=scheduler, revision="fp16", torch_dtype=torch.float16
+        logger.info("Loading text2img pipeline")
+        self.text2img = StableDiffusionXLPipeline.from_pretrained(
+            "stabilityai/stable-diffusion-xl-base-1.0",
+            torch_dtype=torch.float16,
+            variant="fp16",
+            use_safetensors=True,
         )
+        # TODO: What is this lora ckpt doing exactly? Very unclear.
+        self.text2img.load_lora_weights(
+            "stabilityai/stable-diffusion-xl-base-1.0",
+            weight_name="sd_xl_offset_example-lora_1.0.safetensors",
+        )
+        self.text2img.to(torch_dtype=torch.float16)
 
-        self.img2img = StableDiffusionImg2ImgPipeline(
-            tokenizer=self.text2img.tokenizer,
-            text_encoder=self.text2img.text_encoder,
+        # TODO: Not speeding up much and is slower initially.
+        # logger.info("Compiling text2img pipeline")
+        # self.text2img.unet.to(memory_format=torch.channels_last)  # TODO: Important? Consequences?
+        # self.text2img.unet = torch.compile(
+        #     self.text2img.unet, mode="reduce-overhead", fullgraph=True
+        # )
+
+        logger.info("Creating img2img pipeline from text2img components")
+        self.img2img = StableDiffusionXLImg2ImgPipeline(
             vae=self.text2img.vae,
+            text_encoder=self.text2img.text_encoder,
+            text_encoder_2=self.text2img.text_encoder_2,
+            tokenizer=self.text2img.tokenizer,
+            tokenizer_2=self.text2img.tokenizer_2,
             unet=self.text2img.unet,
             scheduler=self.text2img.scheduler,
-            requires_safety_checker=False,
-            safety_checker=None,
-            feature_extractor=None,
         )
 
-        # TODO:
-        # - The non legacy one requires different weights/config for unet.
-        # - Maybe we can load a separate unet for this one instead?
-        # - It's also using further finetuned weights for the other model
-        #   parts.
-        self.inpainting = StableDiffusionInpaintPipelineLegacy(
-            tokenizer=self.text2img.tokenizer,
-            text_encoder=self.text2img.text_encoder,
+        logger.info("Creating inpainting pipeline from text2img components")
+        self.inpainting = StableDiffusionXLInpaintPipeline(
             vae=self.text2img.vae,
+            text_encoder=self.text2img.text_encoder,
+            text_encoder_2=self.text2img.text_encoder_2,
+            tokenizer=self.text2img.tokenizer,
+            tokenizer_2=self.text2img.tokenizer_2,
             unet=self.text2img.unet,
             scheduler=self.text2img.scheduler,
-            requires_safety_checker=False,
-            safety_checker=None,
-            feature_extractor=None,
         )
 
         self.tshirt_img = Image.open("images/tshirt.jpeg").convert("RGB")
         self.tshirt_mask = Image.open("images/tshirt-mask.jpeg").convert("RGB")
 
     def to(self, device: str) -> None:
-        self.text2img = self.text2img.to(device)
-        self.img2img = self.img2img.to(device)
+        self.text2img.to(device)
+        self.img2img.to(device)
+        self.inpainting.to(device)
 
     @property
     def device(self):
@@ -90,14 +95,14 @@ class CombinedPipeline:
         random_generator = torch.Generator(self.device.type).manual_seed(inputs.seed)
 
         if inputs.format == "square":
-            height = 768
-            width = 768
+            height = 1024
+            width = 1024
         elif inputs.format == "wide":
-            height = 768
-            width = 1152
+            height = 1024
+            width = 1536
         else:
-            height = 1152
-            width = 768
+            height = 1536
+            width = 1024
 
         return self.text2img(
             prompt=inputs.prompt,

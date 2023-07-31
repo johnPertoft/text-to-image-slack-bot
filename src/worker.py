@@ -1,9 +1,9 @@
 import asyncio
 import io
-import logging
 import multiprocessing as mp
 from typing import List
 
+from loguru import logger
 from PIL import Image
 from pydantic import BaseModel
 from slack_sdk.web.async_client import AsyncSlackResponse
@@ -41,19 +41,19 @@ class WorkerProcess(mp.Process):
     async def handle_requests_forever(self) -> None:
         # Need to make sure to load the model in this forked process rather than
         # in the main process because otherwise CUDA complains.
-        pipe = CombinedPipeline("pipelines/stabilityai/stable-diffusion-2")
+        pipe = CombinedPipeline()
         pipe.to("cuda")
 
-        logging.info("Inference ready to handle requests")
+        logger.info("Inference ready to handle requests")
         while True:
             task = self.task_queue.get()
             try:
                 await self.handle_request(task, pipe)
             except Exception as e:
-                logging.warning(f"Caught unhandled exception: {e}")
+                logger.warning(f"Caught unhandled exception: {e}")
 
     async def handle_request(self, task: InferenceTask, pipe: CombinedPipeline) -> None:
-        logging.info(f"Handling request: {task}")
+        logger.info(f"Handling request: {task}")
         results = self.generate(pipe, task.inputs)
 
         # Upload images to Slack.
