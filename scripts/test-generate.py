@@ -37,7 +37,7 @@ tshirt_inputs = CombinedPipelineInputs(
     tshirt_mode=True,
 )
 
-pipe = CombinedPipeline("pipelines/stabilityai/stable-diffusion-2")
+pipe = CombinedPipeline()
 pipe.to("cuda")
 p = WorkerProcess(task_queue=None, slack_client=None)  # type: ignore
 

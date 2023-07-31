@@ -32,20 +32,13 @@ class CombinedPipeline:
             variant="fp16",
             use_safetensors=True,
         )
-        # TODO: What is this lora doing exactly?
+        # TODO: What is this lora ckpt doing exactly?
         # self.text2img.load_lora_weights(
         #     "stabilityai/stable-diffusion-xl-base-1.0",
         #     weight_name="sd_xl_offset_example-lora_1.0.safetensors",
         # )
         self.text2img.to(torch_dtype=torch.float16)
 
-        # TODO: Should use this but the import is not working for some reason?
-        # self.img2img = AutoPipelineForImageToImage.from_pipe(self.text2img)
-        # TODO: The results with this are pretty bad. Figure out why
-        # - Problem with default argument values?
-        # - Or with how the pipeline is created (by taking the parts of the text2img pipeline).
-        #   The example is using the refiner model version
-        # - Actually the example is not really doing anything to the init image
         self.img2img = StableDiffusionXLImg2ImgPipeline(
             vae=self.text2img.vae,
             text_encoder=self.text2img.text_encoder,
