@@ -24,9 +24,9 @@ class Query(BaseModel):
     negative_prompt: Optional[str]
     seed: Optional[int]
     img_url: Optional[HttpUrl]
-    num_inference_steps: int = Field(default=50, ge=1, le=100)
-    guidance_scale: float = Field(default=7.5, ge=1.0, le=15.0)
-    strength: float = Field(default=0.8, ge=0.0, le=1.0)
+    num_inference_steps: int = Field(default=25, ge=1, le=100)
+    guidance_scale: float = Field(default=5.0, ge=1.0, le=15.0)
+    strength: float = Field(default=0.3, ge=0.0, le=1.0)
     format: Literal["square", "tall", "wide"] = "square"
     tshirt_mode: bool = False
 
