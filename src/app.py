@@ -1,5 +1,4 @@
 import argparse
-import logging
 import multiprocessing as mp
 import os
 import random
@@ -7,6 +6,7 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 
+from loguru import logger
 from pydantic import ValidationError
 from slack_bolt import BoltRequest
 from slack_bolt import Say
@@ -25,9 +25,6 @@ from .utils import get_secret
 from .worker import InferenceTask
 from .worker import WorkerProcess
 
-logging.basicConfig(level=logging.INFO)
-
-
 argparser = argparse.ArgumentParser()
 argparser.add_argument(
     "--skip_request_verification",
@@ -38,7 +35,7 @@ argparser.add_argument(
 args = argparser.parse_args()
 
 if args.skip_request_verification:
-    logging.warning(
+    logger.warning(
         "Running app without request verification! This should not be done in production!"
     )
 
@@ -60,7 +57,7 @@ async def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
 
     # Download image if necessary.
     if query_dict["img_url"] is not None:
-        logging.info(f"Downloading {query.img_url}")
+        logger.info(f"Downloading {query.img_url}")
         img = await download_img(
             query_dict["img_url"], slack_token=get_secret(GCP_SLACK_BOT_TOKEN_SECRET_NAME)
         )

@@ -41,11 +41,12 @@ class CombinedPipeline:
         # )
         self.text2img.to(torch_dtype=torch.float16)
 
-        logger.info("Compiling text2img pipeline")
-        self.text2img.unet.to(memory_format=torch.channels_last)  # TODO: Important? Consequences?
-        self.text2img.unet = torch.compile(
-            self.text2img.unet, mode="reduce-overhead", fullgraph=True
-        )
+        # TODO: Not speeding up much and is slower initially.
+        # logger.info("Compiling text2img pipeline")
+        # self.text2img.unet.to(memory_format=torch.channels_last)  # TODO: Important? Consequences?
+        # self.text2img.unet = torch.compile(
+        #     self.text2img.unet, mode="reduce-overhead", fullgraph=True
+        # )
 
         logger.info("Creating img2img pipeline from text2img components")
         self.img2img = StableDiffusionXLImg2ImgPipeline(

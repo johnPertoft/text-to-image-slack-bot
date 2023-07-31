@@ -1,14 +1,12 @@
 import functools
 import io
-import logging
 from typing import Optional
 from urllib.parse import urlparse
 
 import aiohttp
 from google.cloud import secretmanager
+from loguru import logger
 from PIL import Image
-
-logging.basicConfig(level=logging.INFO)
 
 
 class DownloadError(Exception):
@@ -39,5 +37,5 @@ async def download_img(url: str, slack_token: Optional[str] = None) -> Image.Ima
                 img = Image.open(img_bytes).convert("RGB")
                 return img
     except Exception as e:
-        logging.exception(f"Exception when downloading image: {e}")
+        logger.exception(f"Exception when downloading image: {e}")
         raise DownloadError("I couldn't download that image!")
