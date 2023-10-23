@@ -1,4 +1,4 @@
-FROM docker.io/nvidia/cuda:11.7.1-cudnn8-devel-ubuntu22.04 AS base
+FROM docker.io/nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04 AS base
 
 # Install system dependencies.
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
