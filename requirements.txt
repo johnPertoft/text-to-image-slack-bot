@@ -3,7 +3,7 @@ aiohttp==3.8.5
 diffusers==0.21.4
 ftfy==6.1.1
 google-cloud-secret-manager==2.16.2
-loguru==0.7.0
+loguru==0.7.2
 slack_bolt==1.18.0
 slack_sdk==3.21.3
 numpy==1.25.1
