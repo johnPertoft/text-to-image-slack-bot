@@ -1,0 +1,7 @@
+# TODO: Does this work on k8s? Think there was some problem before?
+FROM pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime
+WORKDIR /app
+COPY images images
+COPY src src
+ENTRYPOINT ["python", "-m", "src.app"]
+CMD ["--help"]

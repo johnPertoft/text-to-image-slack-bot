@@ -1,3 +1,44 @@
+[project]
+name = "xxxxx"
+authors = [
+    { name = "John Pertoft", email = "john.pertoft@gmail.com" }
+]
+description = "A text-to-image slackbot"
+readme = "README.md"
+requires-python = ">=3.10"
+dynamic = ["version"]
+keywords = [
+    "text-to-image",
+    "slackbot",
+    "image generation",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "slack_bolt>=1.0.0",
+    "slack_sdk>=3.0.0",
+    "torch>=2.0.0",
+    "transformers>=4.34.0"
+]
+
+[project.optional-dependencies]
+tests = ["pytest", "pytest-cov"]
+
+[project.urls]
+Homepage = "https://github.com/johnPertoft/text-to-image-slack-bot"
+Issues = "https://github.com/johnPertoft/text-to-image-slack-bot/issues"
+
+[build-system]
+requires = ["setuptools>=61", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/version.py"
+local_scheme = "no-local-version"
+
 [tool.black]
 line-length = 100
 
