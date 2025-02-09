@@ -7,7 +7,6 @@ from typing import Literal
 from typing import Optional
 
 from pydantic import BaseModel
-from pydantic import Extra
 from pydantic import Field
 from pydantic import HttpUrl
 from pydantic import ValidationError
@@ -19,7 +18,7 @@ class ParseQueryException(Exception):
     pass
 
 
-class Query(BaseModel):
+class Query(BaseModel, extra="forbid"):
     prompt: str
     negative_prompt: Optional[str] = Field(default=None)
     seed: Optional[int] = Field(default=None)
@@ -30,18 +29,15 @@ class Query(BaseModel):
     format: Literal["square", "tall", "wide"] = "square"
     tshirt_mode: bool = False
 
-    class Config:
-        extra = Extra.forbid
-
 
 # Create an argument parser from the Query model.
 QUERY_PARSER = argparse.ArgumentParser()
 QUERY_PARSER.add_argument("prompt", nargs="+")
-assert (
-    sum(f.is_required() for f in Query.model_fields.values()) == 1
-), "Just one required arg allowed"
 for argname, field in Query.model_fields.items():
-    if not field.is_required():
+    if argname == "prompt":
+        assert field.is_required()
+    else:
+        assert not field.is_required()
         if field.annotation is bool:
             QUERY_PARSER.add_argument(
                 f"--{argname}", action=argparse.BooleanOptionalAction, default=False
