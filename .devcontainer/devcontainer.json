@@ -12,7 +12,13 @@
 		"ghcr.io/jsburckhardt/devcontainer-features/uv:1": {},
 		"ghcr.io/devcontainers-extra/features/fzf:1": {},
 		"ghcr.io/devcontainers-extra/features/ripgrep:1": {}
+        //"ghcr.io/paul-gilber/devcontainer-features/buildah-apt-get:1": {}
 	},
+
+    "runArgs": [
+        "--gpus=all",
+        "--ipc=host"
+    ],
 
 	"postCreateCommand": "uv python pin $(cat .python-version) && uv sync --dev",
     "postStartCommand": "uv run pre-commit install",
