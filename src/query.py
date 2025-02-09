@@ -21,9 +21,9 @@ class ParseQueryException(Exception):
 
 class Query(BaseModel):
     prompt: str
-    negative_prompt: Optional[str]
-    seed: Optional[int]
-    img_url: Optional[HttpUrl]
+    negative_prompt: Optional[str] = Field(default=None)
+    seed: Optional[int] = Field(default=None)
+    img_url: Optional[HttpUrl] = Field(default=None)
     num_inference_steps: int = Field(default=25, ge=1, le=100)
     guidance_scale: float = Field(default=5.0, ge=1.0, le=15.0)
     strength: float = Field(default=0.3, ge=0.0, le=1.0)
@@ -37,10 +37,12 @@ class Query(BaseModel):
 # Create an argument parser from the Query model.
 QUERY_PARSER = argparse.ArgumentParser()
 QUERY_PARSER.add_argument("prompt", nargs="+")
-assert sum(f.required for f in Query.__fields__.values()) == 1, "Just one required arg allowed"
-for argname, field in Query.__fields__.items():
-    if not field.required:
-        if field.type_ == bool:
+assert (
+    sum(f.is_required() for f in Query.model_fields.values()) == 1
+), "Just one required arg allowed"
+for argname, field in Query.model_fields.items():
+    if not field.is_required():
+        if field.annotation is bool:
             QUERY_PARSER.add_argument(
                 f"--{argname}", action=argparse.BooleanOptionalAction, default=False
             )

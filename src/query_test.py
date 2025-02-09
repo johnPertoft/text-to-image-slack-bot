@@ -1,6 +1,8 @@
+import typing as tp
 from collections import OrderedDict
 
 import pytest
+from pydantic import HttpUrl
 
 from .query import ParseQueryException
 from .query import get_flags_string
@@ -33,21 +35,21 @@ def test_config_with_uri():
     raw = "<@burgerman> a red apple --img_url=<https://test.url/img.png>"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_url == "https://test.url/img.png"
+    assert q.img_url == HttpUrl("https://test.url/img.png")
 
 
 def test_config_with_uri_with_commas():
     raw = "<@burgerman> a red apple --img_url=<https://test.url/img.png?abc=1,2,3>"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_url == "https://test.url/img.png?abc=1,2,3"
+    assert q.img_url == HttpUrl("https://test.url/img.png?abc=1,2,3")
 
 
 def test_config_with_uri_last():
     raw = "<@burgerman> a red apple --seed=123 --img_url=<https://test.url/img.png?abc=1,2,3>"
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_url == "https://test.url/img.png?abc=1,2,3"
+    assert q.img_url == HttpUrl("https://test.url/img.png?abc=1,2,3")
     assert q.seed == 123
 
 
@@ -93,14 +95,14 @@ def test_text_before_mention():
     raw = "here is some text followed by <@burgerman> a red apple --seed=123 --img_url=<https://test.url/img.png?abc=1,2,3>"  # noqa: E501
     q = parse_query(raw)
     assert q.prompt == "a red apple"
-    assert q.img_url == "https://test.url/img.png?abc=1,2,3"
+    assert q.img_url == HttpUrl("https://test.url/img.png?abc=1,2,3")
     assert q.seed == 123
 
 
 def test_get_flags_string():
     # OrderedDict is not required by the function but is required
     # for this assertion to be correct.
-    config = OrderedDict(
+    config: tp.Dict[str, tp.Any] = OrderedDict(
         [("aaa", True), ("bbb", "this is a string with spaces"), ("ccc", 10.0), ("ddd", None)]
     )
     flags_str = get_flags_string(config)
