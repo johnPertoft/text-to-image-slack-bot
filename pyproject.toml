@@ -25,6 +25,9 @@ dev = [
     "ruff>=0.9.5",
 ]
 
+[tool.uv]
+cache-dir = ".uv-cache"
+
 [tool.ruff]
 line-length = 100
 
