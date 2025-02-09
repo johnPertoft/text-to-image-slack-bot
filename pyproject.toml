@@ -1,9 +1,40 @@
-[tool.black]
+[project]
+name = "text-to-image-slackbot"
+version = "0.1.0"
+description = "A slackbot that generates images from text"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "aiohttp>=3.11.12",
+    "diffusers>=0.32.2",
+    "google-cloud-secret-manager>=2.22.1",
+    "loguru>=0.7.3",
+    "pillow>=11.1.0",
+    "pydantic>=2.10.6",
+    "slack-bolt>=1.22.0",
+    "slack-sdk>=3.34.0",
+    "torch>=2.6.0",
+    "typer>=0.15.1",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.1.0",
+    "pyright>=1.1.393",
+    "pytest>=8.3.4",
+    "ruff>=0.9.5",
+]
+
+[tool.ruff]
 line-length = 100
 
-[tool.mypy]
-ignore_missing_imports = true
-
-[tool.isort]
-profile = "black"
-force_single_line = true
+[tool.pyright]
+"venvPath" = "./"
+"venv" = ".venv"
+include = []
+exclude = [
+    "**/__pycache__",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv"
+]

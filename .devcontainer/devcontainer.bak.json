@@ -1,0 +1,41 @@
+{
+	"name": "text-to-image-slack-bot",
+	"build": {
+		"dockerfile": "../Dockerfile",
+		"target": "dev",
+		"context": ".."
+	},
+	"runArgs": [
+        "--gpus=all",
+        "--ipc=host"
+    ],
+	"mounts": [
+        "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind,consistency=cached",
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    ],
+	"containerEnv": {
+		"CI": "${localEnv:CI:false}"
+	},
+	"postCreateCommand": ".devcontainer/post-create.sh",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh",
+        		"python.pythonPath": "/opt/conda/bin/python",
+				"python.formatting.provider": "black",
+				"python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+				"python.linting.enabled": true,
+				"python.linting.flake8Enabled": true,
+				"python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+				"python.linting.mypyEnabled": true,
+				"python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+				"editor.wordBasedCompletionInComments": false
+			},
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"eamodio.gitlens"
+			]
+		}
+	}
+}

@@ -1,41 +1,61 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/debian
 {
-	"name": "text-to-image-slack-bot",
-	"build": {
-		"dockerfile": "../Dockerfile",
-		"target": "dev",
-		"context": ".."
+	"name": "text-to-image-slackbot",
+
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
+
+	"features": {
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/dhoeric/features/hadolint:1": {},
+		"ghcr.io/jsburckhardt/devcontainer-features/uv:1": {},
+		"ghcr.io/devcontainers-extra/features/fzf:1": {},
+		"ghcr.io/devcontainers-extra/features/ripgrep:1": {}
 	},
-	"runArgs": [
-        "--gpus=all",
-        "--ipc=host"
-    ],
-	"mounts": [
-        "source=${localEnv:HOME}/.config/gcloud,target=/home/vscode/.config/gcloud,type=bind,consistency=cached",
-		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
-    ],
-	"containerEnv": {
-		"CI": "${localEnv:CI:false}"
-	},
-	"postCreateCommand": ".devcontainer/post-create.sh",
+
+	"postCreateCommand": "uv python pin $(cat .python-version) && uv sync --dev",
+    "postStartCommand": "uv run pre-commit install",
+
 	"customizations": {
-		"vscode": {
-			"settings": {
-				"terminal.integrated.defaultProfile.linux": "zsh",
-        		"python.pythonPath": "/opt/conda/bin/python",
-				"python.formatting.provider": "black",
-				"python.formatting.blackPath": "/usr/local/py-utils/bin/black",
-				"python.linting.enabled": true,
-				"python.linting.flake8Enabled": true,
-				"python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
-				"python.linting.mypyEnabled": true,
-				"python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
-				"editor.wordBasedCompletionInComments": false
-			},
-			"extensions": [
-				"ms-python.python",
-				"ms-python.vscode-pylance",
-				"eamodio.gitlens"
-			]
-		}
+        "vscode": {
+            "extensions": [
+                "charliermarsh.ruff",
+                "codezombiech.gitignore",
+                "eamodio.gitlens",
+                "exiasr.hadolint",
+                "kevinrose.vsc-python-indent",
+                "mosapride.zenkaku",
+                "ms-azuretools.vscode-docker",
+                "ms-python.python",
+                "njpwerner.autodocstring",
+                "oderwat.indent-rainbow",
+                "pkief.material-icon-theme",
+                "redhat.vscode-yaml",
+                "shardulm94.trailing-spaces",
+                "tamasfe.even-better-toml",
+                "usernamehw.errorlens",
+                "yzhang.markdown-all-in-one",
+                "github.copilot",
+                "github.copilot-chat"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "terminal.integrated.profiles.linux": {
+                    "zsh": {
+                        "path": "/bin/zsh"
+                    }
+                }
+            }
+        }
 	}
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Configure tool-specific properties.
+	// "customizations": {},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
 }
