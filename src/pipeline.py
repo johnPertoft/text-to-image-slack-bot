@@ -84,6 +84,8 @@ class CombinedPipeline:
 
     @torch.no_grad()
     def __call__(self, inputs: CombinedPipelineInputs) -> Dict[str, Any]:
+        # TODO: Only keep the text to image maybe?
+
         if inputs.tshirt_mode:
             return self.call_tshirt(inputs)
         elif inputs.init_img is not None:

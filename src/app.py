@@ -53,7 +53,7 @@ worker_process.start()
 
 
 async def prepare_pipeline_inputs(query: Query) -> CombinedPipelineInputs:
-    query_dict = query.dict()
+    query_dict = query.model_dump()
 
     # Download image if necessary.
     if query_dict["img_url"] is not None:

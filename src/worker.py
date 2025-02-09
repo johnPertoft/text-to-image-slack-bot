@@ -6,8 +6,8 @@ from typing import List
 from loguru import logger
 from PIL import Image
 from pydantic import BaseModel
-from slack_sdk.web.async_client import AsyncSlackResponse
 from slack_sdk.web.async_client import AsyncWebClient
+from slack_sdk.web.async_slack_response import AsyncSlackResponse
 
 from .constants import SLACK_APP_NAME
 from .pipeline import CombinedPipeline
