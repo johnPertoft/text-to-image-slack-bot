@@ -12,6 +12,7 @@ dependencies = [
     "loguru>=0.7.3",
     "pillow>=11.1.0",
     "pydantic>=2.10.6",
+    "sentencepiece>=0.2.0",
     "slack-bolt>=1.22.0",
     "slack-sdk>=3.34.0",
     "torch>=2.6.0",
